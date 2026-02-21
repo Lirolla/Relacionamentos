@@ -18,7 +18,13 @@ import PrayerMode from './components/PrayerMode';
 import CoupleDevotional from './components/CoupleDevotional';
 import NotificationCenter from './components/NotificationCenter';
 import { ReputationDisplay, ReviewModal, SAMPLE_REPUTATION } from './components/ReputationSystem';
-import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award } from 'lucide-react';
+import VideoVerification from './components/VideoVerification';
+import AudioVideoChat from './components/AudioVideoChat';
+import SafeMode from './components/SafeMode';
+import BibleReadingPlan from './components/BibleReadingPlan';
+import ChurchMap from './components/ChurchMap';
+import MatchAnimation from './components/MatchAnimation';
+import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award, Video, Moon, Sun } from 'lucide-react';
 
 // ===================== TELA DE ENTRADA =====================
 const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLogin, onRegister }) => (
@@ -313,6 +319,23 @@ const App: React.FC = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<{name: string; photo: string} | null>(null);
 
+  // Funcionalidades v3
+  const [showVideoVerification, setShowVideoVerification] = useState(false);
+  const [videoVerificationStatus, setVideoVerificationStatus] = useState<'none'|'pending'|'verified'|'rejected'>('none');
+  const [showAudioVideoCall, setShowAudioVideoCall] = useState(false);
+  const [callType, setCallType] = useState<'audio'|'video'>('audio');
+  const [showSafeMode, setShowSafeMode] = useState(false);
+  const [showBiblePlan, setShowBiblePlan] = useState(false);
+  const [showChurchMap, setShowChurchMap] = useState(false);
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true');
+
+  // Persistir dark mode
+  useEffect(() => {
+    localStorage.setItem('darkMode', darkMode.toString());
+    if (darkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, [darkMode]);
+
   // GPS - Solicitar localização
   const requestLocation = () => {
     setLocationStatus('loading');
@@ -415,26 +438,29 @@ const App: React.FC = () => {
 
   // ===================== APP PRINCIPAL =====================
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-amber-100">
-      <header className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center border-b border-slate-100 sticky top-0 z-40">
+    <div className={`min-h-screen flex flex-col font-sans selection:bg-amber-100 transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'}`}>
+      <header className={`backdrop-blur-md px-6 py-4 flex justify-between items-center border-b sticky top-0 z-40 transition-colors duration-300 ${darkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/80 border-slate-100'}`}>
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-amber-200">
             <Heart size={20} fill="white" />
           </div>
           <div>
-            <h1 className="text-xl font-serif font-bold text-slate-800 tracking-tight leading-none">Conexão Divina</h1>
+            <h1 className={`text-xl font-serif font-bold tracking-tight leading-none ${darkMode ? 'text-white' : 'text-slate-800'}`}>Conexão Divina</h1>
             <p className="text-[10px] text-amber-600 font-bold uppercase tracking-widest mt-1">Exclusivo & Premium</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowNotifications(true)} className="relative p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 transition-all border border-slate-100">
+          <button onClick={() => setShowNotifications(true)} className={`relative p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             <Bell size={20} />
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">4</span>
           </button>
-          <button onClick={() => setShowFilter(true)} className="p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 transition-all border border-slate-100">
+          <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-amber-500 text-white border-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <button onClick={() => setShowFilter(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             <SlidersHorizontal size={20} />
           </button>
-          <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 transition-all border border-slate-100">
+          <button onClick={() => setShowSettings(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             <Settings size={20} />
           </button>
         </div>
@@ -567,14 +593,26 @@ const App: React.FC = () => {
                       <h4 className="font-bold text-slate-800">{other?.name}</h4>
                       <p className="text-xs text-emerald-500 font-bold">Online agora</p>
                     </div>
+                    <button onClick={() => { setCallType('audio'); setShowAudioVideoCall(true); }} className="p-2 text-blue-500 hover:text-blue-600" title="Chamada de Áudio">
+                      <Phone size={18}/>
+                    </button>
+                    <button onClick={() => { setCallType('video'); setShowAudioVideoCall(true); }} className="p-2 text-purple-500 hover:text-purple-600" title="Chamada de Vídeo">
+                      <Video size={18}/>
+                    </button>
+                    <button onClick={() => setShowSafeMode(true)} className="p-2 text-emerald-500 hover:text-emerald-600" title="Modo Seguro">
+                      <Shield size={18}/>
+                    </button>
                     <button onClick={() => setShowDevotional(true)} className="p-2 text-amber-500 hover:text-amber-600" title="Devocional do Casal">
                       <BookOpen size={18}/>
                     </button>
-                    <button onClick={() => { setReviewTarget({ name: other?.name || '', photo: other?.imageUrl || '' }); setShowReviewModal(true); }} className="p-2 text-emerald-500 hover:text-emerald-600" title="Avaliar Encontro">
+                    <button onClick={() => setShowBiblePlan(true)} className="p-2 text-indigo-500 hover:text-indigo-600" title="Plano de Leitura">
+                      <Calendar size={18}/>
+                    </button>
+                    <button onClick={() => { setReviewTarget({ name: other?.name || '', photo: other?.imageUrl || '' }); setShowReviewModal(true); }} className="p-2 text-amber-600 hover:text-amber-700" title="Avaliar Encontro">
                       <Award size={18}/>
                     </button>
                     <button onClick={() => { setReportTarget(other || null); setShowReport(true); }} className="p-2 text-slate-300 hover:text-red-400">
-                      <Flag size={18}/>
+                      <Flag size={18}/>  
                     </button>
                   </div>
                   
@@ -682,6 +720,23 @@ const App: React.FC = () => {
                   </div>
                 )}
 
+                {/* Verificação por Vídeo */}
+                {videoVerificationStatus === 'none' && (
+                  <button onClick={() => setShowVideoVerification(true)} className="w-full mt-3 flex items-center justify-center gap-3 py-4 bg-teal-50 text-teal-600 font-bold rounded-2xl border border-teal-100 active:scale-95 transition-all">
+                    <Video size={18}/> Verificação por Vídeo Selfie
+                  </button>
+                )}
+                {videoVerificationStatus === 'pending' && (
+                  <div className="w-full mt-3 flex items-center justify-center gap-3 py-4 bg-yellow-50 text-yellow-600 font-bold rounded-2xl border border-yellow-100">
+                    <Video size={18}/> Vídeo em Análise...
+                  </div>
+                )}
+                {videoVerificationStatus === 'verified' && (
+                  <div className="w-full mt-3 flex items-center justify-center gap-3 py-4 bg-teal-50 text-teal-600 font-bold rounded-2xl border border-teal-100">
+                    <Video size={18}/> Vídeo Verificado ✓
+                  </div>
+                )}
+
                 {/* Botão Premium */}
                 <button onClick={() => setShowPremiumModal(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all">
                   <Crown size={20}/> Seja Premium - R$ 29,90/mês
@@ -695,10 +750,15 @@ const App: React.FC = () => {
                   <ReputationDisplay {...SAMPLE_REPUTATION} userName={state.currentUser.name} isOwnProfile={true} />
                 </div>
 
-                {/* Eventos Cristãos */}
-                <button onClick={() => setShowEvents(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-4 bg-purple-50 text-purple-600 font-bold rounded-2xl border border-purple-100 active:scale-95 transition-all">
-                  <Calendar size={18}/> Eventos Cristãos Próximos
-                </button>
+                {/* Eventos Cristãos e Mapa */}
+                <div className="w-full mt-4 grid grid-cols-2 gap-3">
+                  <button onClick={() => setShowEvents(true)} className="flex items-center justify-center gap-2 py-4 bg-purple-50 text-purple-600 font-bold rounded-2xl border border-purple-100 active:scale-95 transition-all text-sm">
+                    <Calendar size={16}/> Eventos
+                  </button>
+                  <button onClick={() => setShowChurchMap(true)} className="flex items-center justify-center gap-2 py-4 bg-teal-50 text-teal-600 font-bold rounded-2xl border border-teal-100 active:scale-95 transition-all text-sm">
+                    <MapPin size={16}/> Mapa Cristão
+                  </button>
+                </div>
 
                 <div className="w-full mt-8 grid grid-cols-1 gap-4">
                   <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex items-center gap-4">
@@ -1028,28 +1088,65 @@ const App: React.FC = () => {
       {/* ===================== OFFLINE DETECTOR ===================== */}
       <OfflineDetector><></></OfflineDetector>
 
-      {/* ===================== MODAL MATCH ===================== */}
+      {/* ===================== MATCH ANIMATION ELABORADA ===================== */}
       {matchModal && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-8 bg-slate-900/90 backdrop-blur-xl animate-fade-in">
-          <div className="relative w-full max-w-sm bg-white rounded-[60px] overflow-hidden shadow-2xl p-10 text-center animate-scale-up">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-200 via-amber-500 to-amber-200"></div>
-            <Sparkles size={48} className="mx-auto text-amber-500 mb-4 animate-bounce" />
-            <h2 className="text-4xl font-serif text-slate-900 font-bold mb-2">Match!</h2>
-            <p className="text-slate-500 font-medium mb-10">Vocês têm afinidade espiritual.</p>
-            <div className="flex justify-center -space-x-8 mb-10">
-              <div className="w-28 h-28 rounded-[40px] border-4 border-white shadow-2xl overflow-hidden rotate-[-6deg]">
-                <img src={state.currentUser.imageUrl} className="w-full h-full object-cover" />
-              </div>
-              <div className="w-28 h-28 rounded-[40px] border-4 border-white shadow-2xl overflow-hidden rotate-[6deg]">
-                <img src={matchModal.imageUrl} className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <button onClick={() => { setActiveTab('chat'); setMatchModal(null); setActiveChat(state.matches.find(m => m.users.includes(matchModal.id)) || null); }} className="w-full py-5 bg-slate-900 text-white font-bold rounded-2xl shadow-2xl hover:bg-slate-800 transition-all">Iniciar Conversa</button>
-              <button onClick={() => setMatchModal(null)} className="w-full py-4 text-slate-400 font-bold hover:text-slate-600">Mais Tarde</button>
-            </div>
-          </div>
-        </div>
+        <MatchAnimation
+          currentUserPhoto={state.currentUser.imageUrl}
+          matchedUserPhoto={matchModal.imageUrl}
+          matchedUserName={matchModal.name}
+          onStartChat={() => { setActiveTab('chat'); setMatchModal(null); setActiveChat(state.matches.find(m => m.users.includes(matchModal.id)) || null); }}
+          onClose={() => setMatchModal(null)}
+        />
+      )}
+
+      {/* ===================== VERIFICAÇÃO POR VÍDEO ===================== */}
+      {showVideoVerification && (
+        <VideoVerification
+          onClose={() => setShowVideoVerification(false)}
+          onSubmit={(status) => setVideoVerificationStatus(status as any)}
+          currentStatus={videoVerificationStatus}
+        />
+      )}
+
+      {/* ===================== CHAMADA DE ÁUDIO/VÍDEO ===================== */}
+      {showAudioVideoCall && activeChat && (() => {
+        const other = state.profiles.find(p => activeChat.users.includes(p.id));
+        return (
+          <AudioVideoChat
+            partnerName={other?.name || 'Parceiro(a)'}
+            partnerPhoto={other?.imageUrl || ''}
+            callType={callType}
+            onClose={() => setShowAudioVideoCall(false)}
+          />
+        );
+      })()}
+
+      {/* ===================== MODO SEGURO ===================== */}
+      {showSafeMode && activeChat && (() => {
+        const other = state.profiles.find(p => activeChat.users.includes(p.id));
+        return (
+          <SafeMode
+            partnerName={other?.name || 'Parceiro(a)'}
+            partnerPhoto={other?.imageUrl || ''}
+            onClose={() => setShowSafeMode(false)}
+          />
+        );
+      })()}
+
+      {/* ===================== PLANO DE LEITURA BÍBLICA ===================== */}
+      {showBiblePlan && (() => {
+        const other = activeChat ? state.profiles.find(p => activeChat.users.includes(p.id)) : null;
+        return (
+          <BibleReadingPlan
+            onClose={() => setShowBiblePlan(false)}
+            partnerName={other?.name}
+          />
+        );
+      })()}
+
+      {/* ===================== MAPA DE IGREJAS ===================== */}
+      {showChurchMap && (
+        <ChurchMap onClose={() => setShowChurchMap(false)} />
       )}
 
       <style>{`

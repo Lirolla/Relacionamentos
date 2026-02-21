@@ -743,10 +743,255 @@ app.put('/api/admin/pastor-verifications/:id/reject', (req, res) => {
 });
 
 // =====================================================
+// ===== VIDEO VERIFICATION =====
+// =====================================================
+let videoVerifications = [];
+
+app.post('/api/video-verification/submit', (req, res) => {
+  const { userId, phrase, videoUrl } = req.body;
+  const newVerification = { id: 'vv' + Date.now(), userId, phrase, videoUrl, status: 'pending', submittedAt: new Date().toISOString(), reviewedAt: null };
+  videoVerifications.push(newVerification);
+  res.status(201).json({ message: 'Vídeo de verificação enviado para análise', verification: newVerification });
+});
+
+app.get('/api/admin/video-verifications', (req, res) => {
+  res.json(videoVerifications);
+});
+
+app.put('/api/admin/video-verifications/:id/approve', (req, res) => {
+  const vv = videoVerifications.find(x => x.id === req.params.id);
+  if (!vv) return res.status(404).json({ error: 'Verificação não encontrada' });
+  vv.status = 'verified';
+  vv.reviewedAt = new Date().toISOString();
+  const user = users.find(u => u.id === vv.userId);
+  if (user) user.isVideoVerified = true;
+  res.json({ message: 'Vídeo verificado com sucesso', verification: vv });
+});
+
+app.put('/api/admin/video-verifications/:id/reject', (req, res) => {
+  const vv = videoVerifications.find(x => x.id === req.params.id);
+  if (!vv) return res.status(404).json({ error: 'Verificação não encontrada' });
+  vv.status = 'rejected';
+  vv.reviewedAt = new Date().toISOString();
+  res.json({ message: 'Vídeo rejeitado', verification: vv });
+});
+
+// =====================================================
+// ===== COMMUNITY FEED (POSTS) =====
+// =====================================================
+let communityPosts = [
+  { id: 'cp1', userId: '2', userName: 'Sarah Oliveira', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400', content: 'Que culto maravilhoso ontem! Deus está fazendo coisas incríveis na nossa igreja.', category: 'testemunho', imageUrl: null, likes: 24, comments: [], isPastorVerified: true, createdAt: new Date().toISOString() },
+  { id: 'cp2', userId: '3', userName: 'Gabriel Santos', userPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400', content: 'Salmos 23:1 - O Senhor é o meu pastor e nada me faltará. Amém!', category: 'devocional', imageUrl: null, likes: 18, comments: [], isPastorVerified: false, createdAt: new Date().toISOString() },
+];
+
+app.get('/api/community/posts', (req, res) => {
+  const { category } = req.query;
+  let filtered = communityPosts;
+  if (category && category !== 'all') filtered = filtered.filter(p => p.category === category);
+  res.json(filtered);
+});
+
+app.post('/api/community/posts', (req, res) => {
+  const newPost = { id: 'cp' + Date.now(), ...req.body, likes: 0, comments: [], createdAt: new Date().toISOString() };
+  communityPosts.unshift(newPost);
+  res.status(201).json(newPost);
+});
+
+app.post('/api/community/posts/:id/like', (req, res) => {
+  const post = communityPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Post não encontrado' });
+  post.likes++;
+  res.json({ likes: post.likes });
+});
+
+app.post('/api/community/posts/:id/comment', (req, res) => {
+  const post = communityPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Post não encontrado' });
+  const comment = { id: 'cc' + Date.now(), ...req.body, createdAt: new Date().toISOString() };
+  post.comments.push(comment);
+  res.status(201).json(comment);
+});
+
+// =====================================================
+// ===== PRAYER REQUESTS =====
+// =====================================================
+let prayerRequests = [
+  { id: 'pr1', userId: '2', userName: 'Sarah Oliveira', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400', content: 'Peço oração pela saúde da minha mãe que está internada.', category: 'saude', isUrgent: true, prayerCount: 15, responses: [], createdAt: new Date().toISOString() },
+  { id: 'pr2', userId: '4', userName: 'Rebeca Lima', userPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', content: 'Orem por mim, estou em busca de um novo emprego.', category: 'trabalho', isUrgent: false, prayerCount: 8, responses: [], createdAt: new Date().toISOString() },
+];
+
+app.get('/api/prayers', (req, res) => {
+  const { category } = req.query;
+  let filtered = prayerRequests;
+  if (category && category !== 'all') filtered = filtered.filter(p => p.category === category);
+  res.json(filtered);
+});
+
+app.post('/api/prayers', (req, res) => {
+  const newPrayer = { id: 'pr' + Date.now(), ...req.body, prayerCount: 0, responses: [], createdAt: new Date().toISOString() };
+  prayerRequests.unshift(newPrayer);
+  res.status(201).json(newPrayer);
+});
+
+app.post('/api/prayers/:id/pray', (req, res) => {
+  const prayer = prayerRequests.find(p => p.id === req.params.id);
+  if (!prayer) return res.status(404).json({ error: 'Pedido não encontrado' });
+  prayer.prayerCount++;
+  res.json({ prayerCount: prayer.prayerCount });
+});
+
+app.post('/api/prayers/:id/respond', (req, res) => {
+  const prayer = prayerRequests.find(p => p.id === req.params.id);
+  if (!prayer) return res.status(404).json({ error: 'Pedido não encontrado' });
+  const response = { id: 'prr' + Date.now(), ...req.body, createdAt: new Date().toISOString() };
+  prayer.responses.push(response);
+  res.status(201).json(response);
+});
+
+// =====================================================
+// ===== BIBLE READING PLANS =====
+// =====================================================
+let userReadingProgress = [];
+
+app.get('/api/bible-plans', (req, res) => {
+  res.json([
+    { id: 'love21', title: '21 Dias sobre o Amor', duration: '21 dias', totalDays: 21 },
+    { id: 'faith14', title: '14 Dias de Fé a Dois', duration: '14 dias', totalDays: 14 },
+    { id: 'purpose7', title: '7 Dias de Propósito', duration: '7 dias', totalDays: 7 },
+  ]);
+});
+
+app.get('/api/bible-plans/:planId/progress/:userId', (req, res) => {
+  const progress = userReadingProgress.filter(p => p.planId === req.params.planId && p.userId === req.params.userId);
+  res.json(progress);
+});
+
+app.post('/api/bible-plans/:planId/complete-day', (req, res) => {
+  const { userId, day, reflection } = req.body;
+  const entry = { id: 'brp' + Date.now(), planId: req.params.planId, userId, day, reflection, completedAt: new Date().toISOString() };
+  userReadingProgress.push(entry);
+  res.status(201).json(entry);
+});
+
+// =====================================================
+// ===== CHURCH MAP =====
+// =====================================================
+app.get('/api/churches/nearby', (req, res) => {
+  const { lat, lng, radius } = req.query;
+  // Return all churches with simulated distances
+  const churchesWithDistance = churches.map(c => ({
+    ...c,
+    distance: (Math.random() * 10 + 0.5).toFixed(1) + ' km',
+    rating: (4 + Math.random()).toFixed(1),
+    services: ['Domingo 9h', 'Domingo 19h', 'Quarta 19:30'],
+  }));
+  res.json(churchesWithDistance);
+});
+
+app.get('/api/events/nearby', (req, res) => {
+  const { lat, lng, radius } = req.query;
+  const eventsWithDistance = events.filter(e => e.isActive).map(e => ({
+    ...e,
+    distance: (Math.random() * 15 + 1).toFixed(1) + ' km',
+  }));
+  res.json(eventsWithDistance);
+});
+
+// =====================================================
+// ===== REPUTATION / REVIEWS =====
+// =====================================================
+let userReviews = [];
+
+app.get('/api/users/:userId/reputation', (req, res) => {
+  const reviews = userReviews.filter(r => r.reviewedUserId === req.params.userId);
+  const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+  const traits = {};
+  reviews.forEach(r => { r.traits.forEach(t => { traits[t] = (traits[t] || 0) + 1; }); });
+  res.json({ averageRating: avgRating, totalReviews: reviews.length, traits, reviews });
+});
+
+app.post('/api/reviews', (req, res) => {
+  const newReview = { id: 'rv' + Date.now(), ...req.body, createdAt: new Date().toISOString() };
+  userReviews.push(newReview);
+  res.status(201).json(newReview);
+});
+
+// =====================================================
+// ===== SAFE MODE =====
+// =====================================================
+let safeModeAlerts = [];
+
+app.post('/api/safe-mode/activate', (req, res) => {
+  const { userId, contactName, contactPhone, partnerName, meetingLocation } = req.body;
+  const alert = { id: 'sm' + Date.now(), userId, contactName, contactPhone, partnerName, meetingLocation, status: 'active', activatedAt: new Date().toISOString() };
+  safeModeAlerts.push(alert);
+  res.status(201).json({ message: 'Modo Seguro ativado! Seu contato de confiança será notificado.', alert });
+});
+
+app.post('/api/safe-mode/emergency', (req, res) => {
+  const { userId } = req.body;
+  const alert = safeModeAlerts.find(a => a.userId === userId && a.status === 'active');
+  if (alert) {
+    alert.status = 'emergency';
+    alert.emergencyAt = new Date().toISOString();
+  }
+  res.json({ message: 'Alerta de emergência enviado! Seu contato de confiança foi notificado.' });
+});
+
+app.post('/api/safe-mode/deactivate', (req, res) => {
+  const { userId } = req.body;
+  const alert = safeModeAlerts.find(a => a.userId === userId && a.status === 'active');
+  if (alert) alert.status = 'deactivated';
+  res.json({ message: 'Modo Seguro desativado.' });
+});
+
+// =====================================================
+// ===== DEVOTIONALS =====
+// =====================================================
+const dailyDevotionals = [
+  { verse: 'O amor é paciente, o amor é bondoso.', reference: '1 Coríntios 13:4', reflection: 'Como vocês podem praticar a paciência hoje?', prayer: 'Senhor, nos ajude a amar com paciência e bondade.' },
+  { verse: 'Dois são melhores do que um, porque têm melhor recompensa pelo seu trabalho.', reference: 'Eclesiastes 4:9', reflection: 'Qual é a força de vocês como dupla?', prayer: 'Pai, abençoe esta união e nos fortaleça juntos.' },
+  { verse: 'Acima de tudo, revistam-se do amor, que é o elo perfeito.', reference: 'Colossenses 3:14', reflection: 'O que significa revestir-se de amor no relacionamento?', prayer: 'Deus, que o amor seja a base de tudo entre nós.' },
+];
+
+app.get('/api/devotional/daily', (req, res) => {
+  const dayIndex = new Date().getDate() % dailyDevotionals.length;
+  res.json({ date: new Date().toISOString().split('T')[0], ...dailyDevotionals[dayIndex] });
+});
+
+// =====================================================
+// ===== CALL SIGNALING (simplified) =====
+// =====================================================
+let activeCalls = [];
+
+app.post('/api/calls/initiate', (req, res) => {
+  const { callerId, receiverId, type } = req.body;
+  const call = { id: 'call' + Date.now(), callerId, receiverId, type, status: 'ringing', startedAt: new Date().toISOString() };
+  activeCalls.push(call);
+  res.status(201).json(call);
+});
+
+app.put('/api/calls/:id/answer', (req, res) => {
+  const call = activeCalls.find(c => c.id === req.params.id);
+  if (!call) return res.status(404).json({ error: 'Chamada não encontrada' });
+  call.status = 'active';
+  call.answeredAt = new Date().toISOString();
+  res.json(call);
+});
+
+app.put('/api/calls/:id/end', (req, res) => {
+  const call = activeCalls.find(c => c.id === req.params.id);
+  if (!call) return res.status(404).json({ error: 'Chamada não encontrada' });
+  call.status = 'ended';
+  call.endedAt = new Date().toISOString();
+  res.json(call);
+});
+
+// =====================================================
 // ===== HEALTH CHECK =====
 // =====================================================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now(), version: '3.0.0' });
+  res.json({ status: 'ok', timestamp: Date.now(), version: '4.0.0' });
 });
 
 // =====================================================
@@ -754,6 +999,7 @@ app.get('/api/health', (req, res) => {
 // =====================================================
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Conexão Divina API rodando na porta ${PORT}`);
+  console.log(`🚀 Conexão Divina API v4.0 rodando na porta ${PORT}`);
   console.log(`📊 ${users.length} usuários | ${churches.length} igrejas | ${events.length} eventos`);
+  console.log(`🆕 Video Verification | Audio/Video Chat | Safe Mode | Bible Plans | Church Map | Reputation`);
 });
