@@ -13,7 +13,12 @@ import ProfileStats from './components/ProfileStats';
 import Icebreakers from './components/Icebreakers';
 import OfflineDetector from './components/OfflineDetector';
 import ForgotPassword from './components/ForgotPassword';
-import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User } from 'lucide-react';
+import CommunityFeed from './components/CommunityFeed';
+import PrayerMode from './components/PrayerMode';
+import CoupleDevotional from './components/CoupleDevotional';
+import NotificationCenter from './components/NotificationCenter';
+import { ReputationDisplay, ReviewModal, SAMPLE_REPUTATION } from './components/ReputationSystem';
+import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award } from 'lucide-react';
 
 // ===================== TELA DE ENTRADA =====================
 const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLogin, onRegister }) => (
@@ -249,7 +254,7 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
 const App: React.FC = () => {
   const [screen, setScreen] = useState<'welcome' | 'login' | 'register' | 'app'>('welcome');
   const [state, setState] = useState(INITIAL_STATE);
-  const [activeTab, setActiveTab] = useState<'swipe' | 'chat' | 'profile' | 'admin' | 'favorites'>('swipe');
+  const [activeTab, setActiveTab] = useState<'swipe' | 'chat' | 'profile' | 'admin' | 'favorites' | 'community' | 'prayer'>('swipe');
   const [activeChat, setActiveChat] = useState<Match | null>(null);
   const [matchModal, setMatchModal] = useState<Profile | null>(null);
   const [showFilter, setShowFilter] = useState(false);
@@ -301,6 +306,12 @@ const App: React.FC = () => {
 
   // Icebreakers
   const [showIcebreakers, setShowIcebreakers] = useState(false);
+
+  // Novas funcionalidades
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showDevotional, setShowDevotional] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<{name: string; photo: string} | null>(null);
 
   // GPS - Solicitar localização
   const requestLocation = () => {
@@ -416,6 +427,10 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setShowNotifications(true)} className="relative p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 transition-all border border-slate-100">
+            <Bell size={20} />
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">4</span>
+          </button>
           <button onClick={() => setShowFilter(true)} className="p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 transition-all border border-slate-100">
             <SlidersHorizontal size={20} />
           </button>
@@ -552,6 +567,12 @@ const App: React.FC = () => {
                       <h4 className="font-bold text-slate-800">{other?.name}</h4>
                       <p className="text-xs text-emerald-500 font-bold">Online agora</p>
                     </div>
+                    <button onClick={() => setShowDevotional(true)} className="p-2 text-amber-500 hover:text-amber-600" title="Devocional do Casal">
+                      <BookOpen size={18}/>
+                    </button>
+                    <button onClick={() => { setReviewTarget({ name: other?.name || '', photo: other?.imageUrl || '' }); setShowReviewModal(true); }} className="p-2 text-emerald-500 hover:text-emerald-600" title="Avaliar Encontro">
+                      <Award size={18}/>
+                    </button>
                     <button onClick={() => { setReportTarget(other || null); setShowReport(true); }} className="p-2 text-slate-300 hover:text-red-400">
                       <Flag size={18}/>
                     </button>
@@ -669,6 +690,11 @@ const App: React.FC = () => {
                 {/* Estatísticas do Perfil */}
                 <ProfileStats stats={{ views: 127, likes: 43, matches: 12, matchRate: 68, likedBy: 89 }} isPremium={false} onUpgrade={() => setShowPremiumModal(true)} />
 
+                {/* Reputação */}
+                <div className="w-full mt-4">
+                  <ReputationDisplay {...SAMPLE_REPUTATION} userName={state.currentUser.name} isOwnProfile={true} />
+                </div>
+
                 {/* Eventos Cristãos */}
                 <button onClick={() => setShowEvents(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-4 bg-purple-50 text-purple-600 font-bold rounded-2xl border border-purple-100 active:scale-95 transition-all">
                   <Calendar size={18}/> Eventos Cristãos Próximos
@@ -745,6 +771,24 @@ const App: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* ===================== ABA COMUNIDADE ===================== */}
+        {activeTab === 'community' && (
+          <CommunityFeed 
+            currentUserId={state.currentUser.id}
+            currentUserName={state.currentUser.name}
+            currentUserPhoto={state.currentUser.imageUrl}
+          />
+        )}
+
+        {/* ===================== ABA ORAÇÃO ===================== */}
+        {activeTab === 'prayer' && (
+          <PrayerMode 
+            currentUserId={state.currentUser.id}
+            currentUserName={state.currentUser.name}
+            currentUserPhoto={state.currentUser.imageUrl}
+          />
         )}
 
         {activeTab === 'admin' && <AdminPanel profiles={state.profiles} matches={state.matches} />}
@@ -941,6 +985,44 @@ const App: React.FC = () => {
           </div>
           <Events events={events} onJoinEvent={(id) => alert('Inscrito no evento!')} onCreateEvent={(data) => alert('Evento criado!')} />
         </div>
+      )}
+
+      {/* ===================== NOTIFICAÇÕES ===================== */}
+      {showNotifications && (
+        <NotificationCenter 
+          onClose={() => setShowNotifications(false)}
+          onNavigate={(tab) => { setActiveTab(tab as any); setShowNotifications(false); }}
+        />
+      )}
+
+      {/* ===================== DEVOCIONAL DO CASAL ===================== */}
+      {showDevotional && activeChat && (() => {
+        const other = state.profiles.find(p => activeChat.users.includes(p.id));
+        return (
+          <CoupleDevotional
+            partnerName={other?.name || 'Parceiro(a)'}
+            partnerPhoto={other?.imageUrl || ''}
+            onClose={() => setShowDevotional(false)}
+            onShareInChat={(text) => {
+              const msg: Message = { id: `msg-${Date.now()}`, senderId: state.currentUser.id, text, timestamp: Date.now() };
+              setState(prev => ({
+                ...prev,
+                matches: prev.matches.map(m => m.id === activeChat.id ? { ...m, messages: [...m.messages, msg], lastInteraction: Date.now() } : m)
+              }));
+              setActiveChat(prev => prev ? { ...prev, messages: [...prev.messages, msg] } : null);
+            }}
+          />
+        );
+      })()}
+
+      {/* ===================== AVALIAÇÃO DE ENCONTRO ===================== */}
+      {showReviewModal && reviewTarget && (
+        <ReviewModal
+          partnerName={reviewTarget.name}
+          partnerPhoto={reviewTarget.photo}
+          onClose={() => { setShowReviewModal(false); setReviewTarget(null); }}
+          onSubmit={(review) => { console.log('Review submitted:', review); }}
+        />
       )}
 
       {/* ===================== OFFLINE DETECTOR ===================== */}

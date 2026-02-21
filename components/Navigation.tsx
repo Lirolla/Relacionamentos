@@ -1,57 +1,65 @@
 
 import React from 'react';
-import { Heart, MessageCircle, User, LayoutDashboard, Flame, Star } from 'lucide-react';
+import { Heart, MessageCircle, User, LayoutDashboard, Flame, Star, Users, BookOpen } from 'lucide-react';
 import { UserRole } from '../types';
 
 interface NavigationProps {
-  activeTab: 'swipe' | 'chat' | 'profile' | 'admin' | 'favorites';
+  activeTab: 'swipe' | 'chat' | 'profile' | 'admin' | 'favorites' | 'community' | 'prayer';
   setActiveTab: (tab: any) => void;
   role: UserRole;
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, role }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 flex justify-between items-center z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-2.5 flex justify-between items-center z-50 safe-area-bottom">
       <button 
         onClick={() => setActiveTab('swipe')}
-        className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'swipe' ? 'text-amber-600' : 'text-slate-400'}`}
+        className={`flex flex-col items-center gap-0.5 transition-colors flex-1 ${activeTab === 'swipe' ? 'text-amber-600' : 'text-slate-400'}`}
       >
-        <Flame size={22} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">Explorar</span>
+        <Flame size={20} />
+        <span className="text-[8px] font-bold uppercase tracking-tight">Explorar</span>
       </button>
 
       <button 
-        onClick={() => setActiveTab('favorites')}
-        className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'favorites' ? 'text-amber-600' : 'text-slate-400'}`}
+        onClick={() => setActiveTab('community')}
+        className={`flex flex-col items-center gap-0.5 transition-colors flex-1 ${activeTab === 'community' ? 'text-amber-600' : 'text-slate-400'}`}
       >
-        <Star size={22} fill={activeTab === 'favorites' ? 'currentColor' : 'none'} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">Favoritos</span>
+        <Users size={20} />
+        <span className="text-[8px] font-bold uppercase tracking-tight">Comunidade</span>
+      </button>
+
+      <button 
+        onClick={() => setActiveTab('prayer')}
+        className={`flex flex-col items-center gap-0.5 transition-colors flex-1 ${activeTab === 'prayer' ? 'text-amber-600' : 'text-slate-400'}`}
+      >
+        <BookOpen size={20} />
+        <span className="text-[8px] font-bold uppercase tracking-tight">Oração</span>
       </button>
       
       <button 
         onClick={() => setActiveTab('chat')}
-        className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'chat' ? 'text-amber-600' : 'text-slate-400'}`}
+        className={`flex flex-col items-center gap-0.5 transition-colors flex-1 ${activeTab === 'chat' ? 'text-amber-600' : 'text-slate-400'}`}
       >
-        <MessageCircle size={22} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">Bençãos</span>
+        <MessageCircle size={20} />
+        <span className="text-[8px] font-bold uppercase tracking-tight">Chat</span>
       </button>
 
       {role === UserRole.ADMIN && (
         <button 
           onClick={() => setActiveTab('admin')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'admin' ? 'text-amber-600' : 'text-slate-400'}`}
+          className={`flex flex-col items-center gap-0.5 transition-colors flex-1 ${activeTab === 'admin' ? 'text-amber-600' : 'text-slate-400'}`}
         >
-          <LayoutDashboard size={22} />
-          <span className="text-[9px] font-bold uppercase tracking-tight">Gestão</span>
+          <LayoutDashboard size={20} />
+          <span className="text-[8px] font-bold uppercase tracking-tight">Gestão</span>
         </button>
       )}
 
       <button 
         onClick={() => setActiveTab('profile')}
-        className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-amber-600' : 'text-slate-400'}`}
+        className={`flex flex-col items-center gap-0.5 transition-colors flex-1 ${activeTab === 'profile' ? 'text-amber-600' : 'text-slate-400'}`}
       >
-        <User size={22} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">Perfil</span>
+        <User size={20} />
+        <span className="text-[8px] font-bold uppercase tracking-tight">Perfil</span>
       </button>
     </nav>
   );

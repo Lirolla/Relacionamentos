@@ -549,10 +549,204 @@ app.post('/api/payments/portal', async (req, res) => {
 });
 
 // =====================================================
+// ===== COMMUNITY FEED (INSTAGRAM CRISTÃO) =====
+// =====================================================
+let communityPosts = [
+  { id: 'fp1', userId: '2', userName: 'Sarah Oliveira', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', userChurch: 'Batista da Lagoinha', isVerified: true, isPastorVerified: true, content: 'Que culto abençoado ontem! O louvor tocou meu coração de uma forma especial.', imageUrl: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=600', category: 'testemunho', likes: 47, comments: [], location: 'São Paulo, SP', createdAt: new Date().toISOString() },
+  { id: 'fp2', userId: '3', userName: 'Gabriel Santos', userPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', userChurch: 'IEQ Sede', isVerified: true, content: 'Devocional do dia: Provérbios 3:5-6', category: 'devocional', likes: 89, comments: [], createdAt: new Date().toISOString() },
+];
+
+app.get('/api/community/posts', (req, res) => {
+  const { category } = req.query;
+  let filtered = communityPosts;
+  if (category && category !== 'todos') filtered = filtered.filter(p => p.category === category);
+  res.json(filtered);
+});
+
+app.post('/api/community/posts', (req, res) => {
+  const newPost = { id: 'fp' + Date.now(), ...req.body, likes: 0, comments: [], createdAt: new Date().toISOString() };
+  communityPosts.unshift(newPost);
+  res.status(201).json({ message: 'Post publicado', post: newPost });
+});
+
+app.post('/api/community/posts/:id/like', (req, res) => {
+  const post = communityPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Post não encontrado' });
+  post.likes++;
+  res.json({ message: 'Curtido', likes: post.likes });
+});
+
+app.post('/api/community/posts/:id/comment', (req, res) => {
+  const post = communityPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Post não encontrado' });
+  const comment = { id: 'c' + Date.now(), ...req.body, createdAt: new Date().toISOString() };
+  post.comments.push(comment);
+  res.json({ message: 'Comentário adicionado', comment });
+});
+
+app.delete('/api/community/posts/:id', (req, res) => {
+  const idx = communityPosts.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Post não encontrado' });
+  communityPosts.splice(idx, 1);
+  res.json({ message: 'Post excluído' });
+});
+
+// =====================================================
+// ===== PRAYER MODE (MODO ORAÇÃO) =====
+// =====================================================
+let prayerRequests = [
+  { id: 'pr1', userId: '2', userName: 'Sarah Oliveira', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', title: 'Cura para minha mãe', description: 'Minha mãe está internada e precisa de oração.', category: 'saude', prayerCount: 34, isAnonymous: false, responses: [], createdAt: new Date().toISOString(), isUrgent: true },
+  { id: 'pr2', userId: '3', userName: 'Gabriel Santos', userPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', title: 'Direção profissional', description: 'Preciso de sabedoria para tomar decisões na carreira.', category: 'trabalho', prayerCount: 18, isAnonymous: false, responses: [], createdAt: new Date().toISOString(), isUrgent: false },
+];
+
+app.get('/api/prayers', (req, res) => {
+  const { category } = req.query;
+  let filtered = prayerRequests;
+  if (category && category !== 'todos') filtered = filtered.filter(p => p.category === category);
+  res.json(filtered);
+});
+
+app.post('/api/prayers', (req, res) => {
+  const newPrayer = { id: 'pr' + Date.now(), ...req.body, prayerCount: 0, responses: [], createdAt: new Date().toISOString() };
+  prayerRequests.unshift(newPrayer);
+  res.status(201).json({ message: 'Pedido de oração criado', prayer: newPrayer });
+});
+
+app.post('/api/prayers/:id/pray', (req, res) => {
+  const prayer = prayerRequests.find(p => p.id === req.params.id);
+  if (!prayer) return res.status(404).json({ error: 'Pedido não encontrado' });
+  prayer.prayerCount++;
+  res.json({ message: 'Oração registrada', prayerCount: prayer.prayerCount });
+});
+
+app.post('/api/prayers/:id/respond', (req, res) => {
+  const prayer = prayerRequests.find(p => p.id === req.params.id);
+  if (!prayer) return res.status(404).json({ error: 'Pedido não encontrado' });
+  const response = { id: 'r' + Date.now(), ...req.body, createdAt: new Date().toISOString() };
+  prayer.responses.push(response);
+  res.json({ message: 'Resposta adicionada', response });
+});
+
+// =====================================================
+// ===== DEVOTIONAL (DEVOCIONAL DO CASAL) =====
+// =====================================================
+const devotionals = [
+  { id: 'd1', date: new Date().toISOString().split('T')[0], verse: 'Acima de tudo, porém, revistam-se do amor, que é o elo perfeito.', reference: 'Colossenses 3:14', reflection: 'O amor é o elo perfeito que une todas as virtudes.', question: 'De que forma prática você pode demonstrar amor ao outro hoje?', prayer: 'Senhor, ensina-nos a amar como Tu nos amas.', theme: 'Amor' },
+  { id: 'd2', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], verse: 'Sejam completamente humildes e dóceis, e sejam pacientes, suportando uns aos outros com amor.', reference: 'Efésios 4:2', reflection: 'A paciência é uma das maiores provas de amor.', question: 'Em que área vocês precisam exercitar mais paciência?', prayer: 'Pai, dá-nos paciência para os momentos difíceis.', theme: 'Paciência' },
+];
+
+app.get('/api/devotionals', (req, res) => {
+  res.json(devotionals);
+});
+
+app.get('/api/devotionals/today', (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const devotional = devotionals.find(d => d.date === today) || devotionals[0];
+  res.json(devotional);
+});
+
+// =====================================================
+// ===== REPUTATION SYSTEM =====
+// =====================================================
+let reviews = [
+  { id: 'rv1', fromUserId: '2', toUserId: '1', rating: 5, traits: ['Respeitoso(a)', 'Gentil', 'Fé genuína'], createdAt: new Date().toISOString() },
+  { id: 'rv2', fromUserId: '4', toUserId: '1', rating: 4, traits: ['Boa conversa', 'Fotos reais', 'Pontual'], createdAt: new Date().toISOString() },
+];
+
+app.get('/api/reputation/:userId', (req, res) => {
+  const userReviews = reviews.filter(r => r.toUserId === req.params.userId);
+  const totalReviews = userReviews.length;
+  const avgRating = totalReviews > 0 ? userReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews : 0;
+  
+  // Count traits
+  const traitCounts = {};
+  userReviews.forEach(r => r.traits.forEach(t => { traitCounts[t] = (traitCounts[t] || 0) + 1; }));
+  const traits = Object.entries(traitCounts).map(([name, count]) => ({
+    name, count, percentage: Math.round((count / totalReviews) * 100)
+  })).sort((a, b) => b.count - a.count);
+
+  res.json({ userId: req.params.userId, overallRating: avgRating, totalReviews, traits });
+});
+
+app.post('/api/reputation/review', (req, res) => {
+  const newReview = { id: 'rv' + Date.now(), ...req.body, createdAt: new Date().toISOString() };
+  reviews.push(newReview);
+  res.status(201).json({ message: 'Avaliação enviada', review: newReview });
+});
+
+// =====================================================
+// ===== NOTIFICATIONS =====
+// =====================================================
+let notifications = [
+  { id: 'n1', userId: '1', type: 'match', title: 'Novo Match!', description: 'Você e Sarah Oliveira deram match!', read: false, createdAt: new Date().toISOString() },
+  { id: 'n2', userId: '1', type: 'devotional', title: 'Devocional do Dia', description: 'Medite no versículo de hoje com seu match!', read: false, createdAt: new Date().toISOString() },
+  { id: 'n3', userId: '1', type: 'prayer', title: 'Pedido de oração', description: '12 pessoas oraram pelo seu pedido.', read: false, createdAt: new Date().toISOString() },
+];
+
+app.get('/api/notifications/:userId', (req, res) => {
+  const userNotifs = notifications.filter(n => n.userId === req.params.userId);
+  res.json(userNotifs);
+});
+
+app.put('/api/notifications/:id/read', (req, res) => {
+  const notif = notifications.find(n => n.id === req.params.id);
+  if (!notif) return res.status(404).json({ error: 'Notificação não encontrada' });
+  notif.read = true;
+  res.json({ message: 'Marcada como lida', notification: notif });
+});
+
+app.put('/api/notifications/:userId/read-all', (req, res) => {
+  notifications.filter(n => n.userId === req.params.userId).forEach(n => n.read = true);
+  res.json({ message: 'Todas marcadas como lidas' });
+});
+
+app.delete('/api/notifications/:id', (req, res) => {
+  const idx = notifications.findIndex(n => n.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Notificação não encontrada' });
+  notifications.splice(idx, 1);
+  res.json({ message: 'Notificação excluída' });
+});
+
+// =====================================================
+// ===== PASTOR VERIFICATION (SELO PASTOR APROVA) =====
+// =====================================================
+let pastorVerifications = [
+  { id: 'pv1', userId: '2', userName: 'Sarah Oliveira', pastorName: 'Pr. André Valadão', churchId: 'ch2', churchName: 'Batista da Lagoinha', status: 'approved', requestedAt: '2026-01-20', reviewedAt: '2026-01-22' },
+];
+
+app.get('/api/admin/pastor-verifications', (req, res) => {
+  res.json(pastorVerifications);
+});
+
+app.post('/api/pastor-verification/request', (req, res) => {
+  const newRequest = { id: 'pv' + Date.now(), ...req.body, status: 'pending', requestedAt: new Date().toISOString().split('T')[0], reviewedAt: null };
+  pastorVerifications.push(newRequest);
+  res.status(201).json({ message: 'Solicitação de verificação pastoral enviada', verification: newRequest });
+});
+
+app.put('/api/admin/pastor-verifications/:id/approve', (req, res) => {
+  const pv = pastorVerifications.find(x => x.id === req.params.id);
+  if (!pv) return res.status(404).json({ error: 'Verificação não encontrada' });
+  pv.status = 'approved';
+  pv.reviewedAt = new Date().toISOString().split('T')[0];
+  const user = users.find(u => u.id === pv.userId);
+  if (user) user.isPastorVerified = true;
+  res.json({ message: 'Verificação pastoral aprovada', verification: pv });
+});
+
+app.put('/api/admin/pastor-verifications/:id/reject', (req, res) => {
+  const pv = pastorVerifications.find(x => x.id === req.params.id);
+  if (!pv) return res.status(404).json({ error: 'Verificação não encontrada' });
+  pv.status = 'rejected';
+  pv.reviewedAt = new Date().toISOString().split('T')[0];
+  res.json({ message: 'Verificação pastoral rejeitada', verification: pv });
+});
+
+// =====================================================
 // ===== HEALTH CHECK =====
 // =====================================================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now(), version: '2.0.0' });
+  res.json({ status: 'ok', timestamp: Date.now(), version: '3.0.0' });
 });
 
 // =====================================================
