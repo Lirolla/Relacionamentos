@@ -1,62 +1,324 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { INITIAL_STATE } from './constants';
 import { Profile, Match, UserRole, Message, AppFilters } from './types';
 import Navigation from './components/Navigation';
 import SwipeCard from './components/SwipeCard';
 import AdminPanel from './components/AdminPanel';
-import { getDivineInsight } from './services/geminiService';
-import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X } from 'lucide-react';
+import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User } from 'lucide-react';
 
+// ===================== TELA DE ENTRADA =====================
+const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLogin, onRegister }) => (
+  <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50 flex flex-col items-center justify-center p-8">
+    <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-amber-600 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-amber-200 mb-8">
+      <Heart size={48} fill="white" />
+    </div>
+    <h1 className="text-4xl font-serif font-bold text-slate-800 text-center">Conexão Divina</h1>
+    <p className="text-amber-600 font-bold text-xs uppercase tracking-[0.3em] mt-2">Namoro Cristão</p>
+    <p className="text-slate-500 text-center mt-6 max-w-xs leading-relaxed">Encontre alguém que compartilhe sua fé, valores e propósito de vida.</p>
+    
+    <div className="w-full max-w-xs mt-12 space-y-4">
+      <button onClick={onRegister} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all text-lg">
+        Criar Minha Conta
+      </button>
+      <button onClick={onLogin} className="w-full py-5 bg-white text-slate-700 font-bold rounded-2xl border-2 border-slate-200 active:scale-95 transition-all">
+        Já Tenho Conta
+      </button>
+    </div>
+    
+    <div className="flex items-center gap-6 mt-12 text-xs text-slate-400">
+      <span className="flex items-center gap-1"><Shield size={12}/> Seguro</span>
+      <span className="flex items-center gap-1"><Users size={12}/> +5.000 membros</span>
+      <span className="flex items-center gap-1"><Church size={12}/> Cristão</span>
+    </div>
+  </div>
+);
+
+// ===================== TELA DE LOGIN =====================
+const LoginScreen: React.FC<{ onLogin: () => void; onBack: () => void }> = ({ onLogin, onBack }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  
+  return (
+    <div className="min-h-screen bg-white flex flex-col p-8">
+      <button onClick={onBack} className="self-start p-3 bg-slate-50 rounded-2xl text-slate-400 mb-8"><ArrowLeft size={24}/></button>
+      
+      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+        <h2 className="text-3xl font-serif font-bold text-slate-800 mb-2">Bem-vindo de volta</h2>
+        <p className="text-slate-400 mb-10">Entre com sua conta para continuar</p>
+        
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">E-mail</label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18}/>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Senha</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18}/>
+              <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Sua senha" className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-12 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+              <button onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
+                {showPass ? <EyeOff size={18}/> : <Eye size={18}/>}
+              </button>
+            </div>
+          </div>
+          
+          <button className="text-amber-600 text-sm font-bold self-end">Esqueci minha senha</button>
+          
+          <button onClick={onLogin} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
+            Entrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===================== TELA DE REGISTRO =====================
+const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> = ({ onRegister, onBack }) => {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    name: '', age: '', email: '', password: '',
+    denomination: '', churchName: '', churchRole: '',
+    location: '', bio: '', faithJourney: '',
+    gender: '', maritalStatus: 'Solteiro(a)', hasChildren: false
+  });
+  
+  return (
+    <div className="min-h-screen bg-white flex flex-col p-8">
+      <div className="flex items-center justify-between mb-8">
+        <button onClick={step > 1 ? () => setStep(step - 1) : onBack} className="p-3 bg-slate-50 rounded-2xl text-slate-400"><ArrowLeft size={24}/></button>
+        <div className="flex gap-2">
+          {[1,2,3].map(s => (
+            <div key={s} className={`w-12 h-1.5 rounded-full transition-all ${s <= step ? 'bg-amber-500' : 'bg-slate-200'}`}/>
+          ))}
+        </div>
+        <div className="w-12"/>
+      </div>
+      
+      <div className="flex-1 max-w-sm mx-auto w-full">
+        {step === 1 && (
+          <div className="space-y-6 animate-fade-in">
+            <h2 className="text-3xl font-serif font-bold text-slate-800">Dados Pessoais</h2>
+            <p className="text-slate-400 text-sm">Conte-nos sobre você</p>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nome Completo</label>
+                <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Seu nome" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Idade</label>
+                  <input type="number" value={form.age} onChange={e => setForm({...form, age: e.target.value})} placeholder="25" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Gênero</label>
+                  <select value={form.gender} onChange={e => setForm({...form, gender: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none appearance-none">
+                    <option value="">Selecione</option>
+                    <option>Masculino</option>
+                    <option>Feminino</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">E-mail</label>
+                <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="seu@email.com" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Senha</label>
+                <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Mínimo 6 caracteres" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Estado Civil</label>
+                  <select value={form.maritalStatus} onChange={e => setForm({...form, maritalStatus: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none appearance-none">
+                    <option>Solteiro(a)</option>
+                    <option>Divorciado(a)</option>
+                    <option>Viúvo(a)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Tem Filhos?</label>
+                  <select value={form.hasChildren ? 'sim' : 'nao'} onChange={e => setForm({...form, hasChildren: e.target.value === 'sim'})} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none appearance-none">
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button onClick={() => setStep(2)} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">Próximo</button>
+          </div>
+        )}
+        
+        {step === 2 && (
+          <div className="space-y-6 animate-fade-in">
+            <h2 className="text-3xl font-serif font-bold text-slate-800">Sua Fé</h2>
+            <p className="text-slate-400 text-sm">Informações sobre sua vida cristã</p>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Denominação</label>
+                <select value={form.denomination} onChange={e => setForm({...form, denomination: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none appearance-none">
+                  <option value="">Selecione</option>
+                  <option>Batista</option>
+                  <option>Assembleia de Deus</option>
+                  <option>Presbiteriana</option>
+                  <option>Metodista</option>
+                  <option>Quadrangular</option>
+                  <option>Adventista</option>
+                  <option>Católica</option>
+                  <option>Universal</option>
+                  <option>Sara Nossa Terra</option>
+                  <option>Bola de Neve</option>
+                  <option>Outra</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nome da Sua Igreja</label>
+                <input type="text" value={form.churchName} onChange={e => setForm({...form, churchName: e.target.value})} placeholder="Ex: Batista Central da Lagoinha" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Função na Igreja</label>
+                <select value={form.churchRole} onChange={e => setForm({...form, churchRole: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none appearance-none">
+                  <option value="">Selecione</option>
+                  <option>Membro</option>
+                  <option>Líder de Louvor</option>
+                  <option>Diácono(a)</option>
+                  <option>Professor(a) EBD</option>
+                  <option>Músico(a)</option>
+                  <option>Obreiro(a)</option>
+                  <option>Pastor(a)</option>
+                  <option>Missionário(a)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Sua Cidade</label>
+                <input type="text" value={form.location} onChange={e => setForm({...form, location: e.target.value})} placeholder="Ex: São Paulo, SP" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+              </div>
+            </div>
+            <button onClick={() => setStep(3)} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">Próximo</button>
+          </div>
+        )}
+        
+        {step === 3 && (
+          <div className="space-y-6 animate-fade-in">
+            <h2 className="text-3xl font-serif font-bold text-slate-800">Sobre Você</h2>
+            <p className="text-slate-400 text-sm">Conte mais sobre sua história</p>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Sua Bio</label>
+                <textarea rows={3} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} placeholder="Fale um pouco sobre você..." className="w-full bg-slate-50 border border-slate-100 rounded-[24px] px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Sua História com Jesus</label>
+                <textarea rows={4} value={form.faithJourney} onChange={e => setForm({...form, faithJourney: e.target.value})} placeholder="Conte como Jesus transformou sua vida..." className="w-full bg-slate-50 border border-slate-100 rounded-[24px] px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none" />
+              </div>
+              
+              <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100">
+                <p className="text-amber-700 text-xs font-medium leading-relaxed">
+                  <strong>Ao criar sua conta, você concorda</strong> com nossos Termos de Uso e Política de Privacidade. Seus dados são protegidos e nunca serão compartilhados.
+                </p>
+              </div>
+            </div>
+            <button onClick={onRegister} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
+              Criar Minha Conta
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ===================== APP PRINCIPAL =====================
 const App: React.FC = () => {
+  const [screen, setScreen] = useState<'welcome' | 'login' | 'register' | 'app'>('welcome');
   const [state, setState] = useState(INITIAL_STATE);
   const [activeTab, setActiveTab] = useState<'swipe' | 'chat' | 'profile' | 'admin' | 'favorites'>('swipe');
   const [activeChat, setActiveChat] = useState<Match | null>(null);
   const [matchModal, setMatchModal] = useState<Profile | null>(null);
   const [showFilter, setShowFilter] = useState(false);
-  const [insight, setInsight] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(state.currentUser);
+  
+  // Denúncia
+  const [showReport, setShowReport] = useState(false);
+  const [reportTarget, setReportTarget] = useState<Profile | null>(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportSent, setReportSent] = useState(false);
+  
+  // GPS
+  const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'granted' | 'denied'>('idle');
+  
+  // Configurações
+  const [showSettings, setShowSettings] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  
+  // Igrejas
+  const [showChurches, setShowChurches] = useState(false);
 
-  // Função simples de cálculo de distância (Haversine simplificado para demo)
+  // GPS - Solicitar localização
+  const requestLocation = () => {
+    setLocationStatus('loading');
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+          setLocationStatus('granted');
+          setState(prev => ({
+            ...prev,
+            currentUser: { ...prev.currentUser, coordinates: loc }
+          }));
+        },
+        () => setLocationStatus('denied'),
+        { enableHighAccuracy: true }
+      );
+    } else {
+      setLocationStatus('denied');
+    }
+  };
+
+  // Cálculo de distância
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // km
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
               Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   };
 
   const filteredAndSortedProfiles = useMemo(() => {
     return state.profiles
       .filter(p => {
         if (state.swipedLeft.includes(p.id) || state.swipedRight.includes(p.id)) return false;
-        
-        // Filtros Ativos
-        const distance = p.coordinates ? calculateDistance(
-          state.currentUser.coordinates!.lat, state.currentUser.coordinates!.lng,
+        const distance = p.coordinates && state.currentUser.coordinates ? calculateDistance(
+          state.currentUser.coordinates.lat, state.currentUser.coordinates.lng,
           p.coordinates.lat, p.coordinates.lng
         ) : 999;
-
         if (distance > state.filters.maxDistance) return false;
         if (p.age < state.filters.minAge || p.age > state.filters.maxAge) return false;
-        
         if (state.filters.preferredHeight && p.physical?.height && p.physical.height < state.filters.preferredHeight) return false;
         if (state.filters.preferredHairColor && p.physical?.hairColor !== state.filters.preferredHairColor) return false;
-        
         return true;
       })
       .sort((a, b) => {
-        // Ordenação por Proximidade: mesma igreja primeiro
         if (a.churchName === state.currentUser.churchName) return -1;
         if (b.churchName === state.currentUser.churchName) return 1;
-        
-        const distA = a.coordinates ? calculateDistance(state.currentUser.coordinates!.lat, state.currentUser.coordinates!.lng, a.coordinates.lat, a.coordinates.lng) : 999;
-        const distB = b.coordinates ? calculateDistance(state.currentUser.coordinates!.lat, state.currentUser.coordinates!.lng, b.coordinates.lat, b.coordinates.lng) : 999;
+        const distA = a.coordinates && state.currentUser.coordinates ? calculateDistance(state.currentUser.coordinates.lat, state.currentUser.coordinates.lng, a.coordinates.lat, a.coordinates.lng) : 999;
+        const distB = b.coordinates && state.currentUser.coordinates ? calculateDistance(state.currentUser.coordinates.lat, state.currentUser.coordinates.lng, b.coordinates.lat, b.coordinates.lng) : 999;
         return distA - distB;
       });
   }, [state.profiles, state.swipedLeft, state.swipedRight, state.filters, state.currentUser]);
@@ -71,13 +333,39 @@ const App: React.FC = () => {
         const newMatch: Match = { id: `match-${Date.now()}`, users: [state.currentUser.id, profileId], messages: [], lastInteraction: Date.now() };
         setState(prev => ({ ...prev, matches: [newMatch, ...prev.matches] }));
         setMatchModal(profile);
-        setInsight('Buscando discernimento...');
-        const divineInsight = await getDivineInsight(state.currentUser, profile);
-        setInsight(divineInsight || '');
       }
     }
   };
 
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !activeChat) return;
+    const msg: Message = { id: `msg-${Date.now()}`, senderId: state.currentUser.id, text: newMessage, timestamp: Date.now() };
+    setState(prev => ({
+      ...prev,
+      matches: prev.matches.map(m => m.id === activeChat.id ? { ...m, messages: [...m.messages, msg], lastInteraction: Date.now() } : m)
+    }));
+    setActiveChat(prev => prev ? { ...prev, messages: [...prev.messages, msg] } : null);
+    setNewMessage('');
+  };
+
+  const handleReport = () => {
+    if (!reportReason) return;
+    setReportSent(true);
+    setTimeout(() => {
+      setShowReport(false);
+      setReportSent(false);
+      setReportReason('');
+      setReportDescription('');
+      setReportTarget(null);
+    }, 2000);
+  };
+
+  // ===================== TELAS DE ENTRADA =====================
+  if (screen === 'welcome') return <WelcomeScreen onLogin={() => setScreen('login')} onRegister={() => setScreen('register')} />;
+  if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
+  if (screen === 'register') return <RegisterScreen onRegister={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
+
+  // ===================== APP PRINCIPAL =====================
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-amber-100">
       <header className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center border-b border-slate-100 sticky top-0 z-40">
@@ -94,14 +382,14 @@ const App: React.FC = () => {
           <button onClick={() => setShowFilter(true)} className="p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 transition-all border border-slate-100">
             <SlidersHorizontal size={20} />
           </button>
-          <button onClick={() => setState(p => ({ ...p, currentUser: { ...p.currentUser, role: p.currentUser.role === UserRole.USER ? UserRole.ADMIN : UserRole.USER } }))}
-            className="p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 border border-slate-100 transition-all">
-            <ShieldCheck size={20} className={state.currentUser.role === UserRole.ADMIN ? 'text-amber-600' : ''} />
+          <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-50 rounded-xl text-slate-500 hover:text-amber-600 transition-all border border-slate-100">
+            <Settings size={20} />
           </button>
         </div>
       </header>
 
-      <main className="flex-1 relative overflow-hidden">
+      <main className="flex-1 relative overflow-hidden pb-20">
+        {/* ===================== ABA EXPLORAR ===================== */}
         {activeTab === 'swipe' && (
           <div className="h-full flex flex-col items-center justify-center p-4">
             {currentProfile ? (
@@ -109,13 +397,27 @@ const App: React.FC = () => {
                 <SwipeCard profile={currentProfile} onSwipeRight={handleSwipeRight} onSwipeLeft={(id) => setState(p => ({ ...p, swipedLeft: [...p.swipedLeft, id] }))} />
                 <button 
                   onClick={() => setState(prev => ({ ...prev, favorites: prev.favorites.includes(currentProfile.id) ? prev.favorites.filter(id => id !== currentProfile.id) : [...prev.favorites, currentProfile.id] }))}
-                  className={`absolute top-4 right-4 p-4 rounded-full backdrop-blur-xl transition-all shadow-2xl ${state.favorites.includes(currentProfile.id) ? 'bg-amber-500 text-white' : 'bg-white/30 text-white border border-white/40'}`}
+                  className={`absolute top-4 right-4 p-4 rounded-full backdrop-blur-xl transition-all shadow-2xl z-10 ${state.favorites.includes(currentProfile.id) ? 'bg-amber-500 text-white' : 'bg-white/30 text-white border border-white/40'}`}
                 >
                   <Star size={24} fill={state.favorites.includes(currentProfile.id) ? 'currentColor' : 'none'} />
                 </button>
+                {/* Botão Denunciar */}
+                <button 
+                  onClick={() => { setReportTarget(currentProfile); setShowReport(true); }}
+                  className="absolute top-4 left-4 p-3 rounded-full bg-white/20 backdrop-blur-xl text-white/70 hover:text-red-400 transition-all z-10 border border-white/20"
+                >
+                  <Flag size={18} />
+                </button>
+                {/* Badge mesma igreja */}
                 {currentProfile.churchName === state.currentUser.churchName && (
-                  <div className="absolute top-4 left-4 px-4 py-2 bg-emerald-500/90 backdrop-blur-md text-white rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 border border-emerald-400">
+                  <div className="absolute top-20 left-4 px-4 py-2 bg-emerald-500/90 backdrop-blur-md text-white rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 border border-emerald-400 z-10">
                     <Church size={12}/> Mesma Igreja
+                  </div>
+                )}
+                {/* Badge distância */}
+                {currentProfile.coordinates && state.currentUser.coordinates && (
+                  <div className="absolute top-20 right-4 px-3 py-2 bg-blue-500/90 backdrop-blur-md text-white rounded-full text-[10px] font-bold flex items-center gap-1 z-10">
+                    <MapPin size={12}/> {Math.round(calculateDistance(state.currentUser.coordinates.lat, state.currentUser.coordinates.lng, currentProfile.coordinates.lat, currentProfile.coordinates.lng))} km
                   </div>
                 )}
               </div>
@@ -125,71 +427,14 @@ const App: React.FC = () => {
                   <Sparkles size={40} className="animate-pulse" />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800">Paciência é uma Virtude</h2>
-                <p className="text-slate-500 mt-4 text-sm leading-relaxed">Expandimos sua busca para todas as cidades, mas no momento não há mais perfis que coincidam com seus filtros exclusivos.</p>
+                <p className="text-slate-500 mt-4 text-sm leading-relaxed">Não há mais perfis que coincidam com seus filtros.</p>
                 <button onClick={() => setState(p => ({ ...p, filters: INITIAL_STATE.filters, swipedLeft: [], swipedRight: [] }))} className="mt-8 px-10 py-4 bg-amber-500 text-white rounded-2xl font-bold shadow-xl shadow-amber-200 active:scale-95 transition-all">Redefinir Filtros</button>
               </div>
             )}
           </div>
         )}
 
-        {/* Modal de Filtros Refinados */}
-        {showFilter && (
-          <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-end justify-center animate-fade-in">
-            <div className="bg-white w-full max-w-lg rounded-t-[40px] p-8 shadow-2xl animate-slide-up">
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-serif font-bold text-slate-800">Busca Refinada</h3>
-                <button onClick={() => setShowFilter(false)} className="p-2 bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
-              </div>
-              
-              <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 pb-6">
-                <div>
-                  <div className="flex justify-between mb-4">
-                    <span className="text-sm font-bold text-slate-700">Raio de Distância</span>
-                    <span className="text-sm text-amber-600 font-bold">{state.filters.maxDistance} km</span>
-                  </div>
-                  <input type="range" min="1" max="500" value={state.filters.maxDistance} onChange={e => setState(p => ({ ...p, filters: { ...p.filters, maxDistance: parseInt(e.target.value) } }))} className="w-full accent-amber-500" />
-                  <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                    <span>Próximo à Igreja</span>
-                    <span>Outras Cidades</span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Ruler size={14}/> Preferência de Altura</h4>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[0, 160, 170, 180].map(h => (
-                      <button 
-                        key={h}
-                        onClick={() => setState(p => ({ ...p, filters: { ...p.filters, preferredHeight: h || undefined } }))}
-                        className={`py-3 rounded-2xl text-xs font-bold transition-all border ${state.filters.preferredHeight === h ? 'bg-amber-500 border-amber-500 text-white' : 'bg-slate-50 border-slate-100 text-slate-500'}`}
-                      >
-                        {h === 0 ? 'Tanto faz' : `+${h}cm`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><UserCheck size={14}/> Característica Física</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Morena', 'Moreno', 'Loira', 'Loiro', 'Ruiva', 'Ruivo'].map(c => (
-                      <button 
-                        key={c}
-                        onClick={() => setState(p => ({ ...p, filters: { ...p.filters, preferredHairColor: state.filters.preferredHairColor === c ? undefined : c } }))}
-                        className={`py-3 rounded-2xl text-xs font-bold transition-all border ${state.filters.preferredHairColor === c ? 'bg-amber-500 border-amber-500 text-white' : 'bg-slate-50 border-slate-100 text-slate-500'}`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <button onClick={() => setShowFilter(false)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold shadow-xl mt-4 active:scale-95 transition-all">Ver Resultados Abençoados</button>
-            </div>
-          </div>
-        )}
-
+        {/* ===================== ABA FAVORITOS ===================== */}
         {activeTab === 'favorites' && (
           <div className="p-8 animate-fade-in">
             <h2 className="text-3xl font-serif font-bold text-slate-800 mb-8">Pessoas de Interesse</h2>
@@ -221,14 +466,14 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Abas Restantes (Chat, Profile, Admin) seguem a mesma lógica premium... */}
+        {/* ===================== ABA CHAT ===================== */}
         {activeTab === 'chat' && !activeChat && (
           <div className="p-8 animate-fade-in">
-            <h2 className="text-3xl font-serif font-bold text-slate-800 mb-8">Conversas Divinas</h2>
+            <h2 className="text-3xl font-serif font-bold text-slate-800 mb-8">Conversas</h2>
             {state.matches.length === 0 ? (
               <div className="text-center py-20 opacity-30">
                 <MessageSquare size={64} className="mx-auto text-slate-300 mb-6" />
-                <p className="text-slate-500">Aguardando o tempo de Deus e um match!</p>
+                <p className="text-slate-500">Aguardando um match!</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -242,7 +487,7 @@ const App: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-bold text-slate-800 text-lg">{other?.name}</h4>
-                        <p className="text-xs text-slate-400 font-medium truncate">{m.messages.length > 0 ? m.messages[m.messages.length - 1].text : 'Envie uma saudação abençoada!'}</p>
+                        <p className="text-xs text-slate-400 font-medium truncate">{m.messages.length > 0 ? m.messages[m.messages.length - 1].text : 'Envie uma saudação!'}</p>
                       </div>
                       <div className="text-[10px] font-black text-amber-500 bg-amber-50 px-2 py-1 rounded-lg uppercase">Match</div>
                     </button>
@@ -253,9 +498,70 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* Chat ativo */}
+        {activeTab === 'chat' && activeChat && (
+          <div className="flex flex-col h-[calc(100vh-140px)] animate-fade-in">
+            {(() => {
+              const other = state.profiles.find(p => activeChat.users.includes(p.id));
+              return (
+                <>
+                  <div className="flex items-center gap-4 p-5 bg-white border-b border-slate-100">
+                    <button onClick={() => setActiveChat(null)} className="p-2 text-slate-400"><ArrowLeft size={24}/></button>
+                    <img src={other?.imageUrl} className="w-12 h-12 rounded-2xl object-cover" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-slate-800">{other?.name}</h4>
+                      <p className="text-xs text-emerald-500 font-bold">Online agora</p>
+                    </div>
+                    <button onClick={() => { setReportTarget(other || null); setShowReport(true); }} className="p-2 text-slate-300 hover:text-red-400">
+                      <Flag size={18}/>
+                    </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {activeChat.messages.length === 0 && (
+                      <div className="text-center py-12 opacity-40">
+                        <Heart size={32} className="mx-auto text-amber-300 mb-3"/>
+                        <p className="text-slate-400 text-sm">Vocês deram match! Comece a conversa.</p>
+                      </div>
+                    )}
+                    {activeChat.messages.map(msg => (
+                      <div key={msg.id} className={`flex ${msg.senderId === state.currentUser.id ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[75%] px-5 py-3 rounded-3xl text-sm font-medium ${
+                          msg.senderId === state.currentUser.id 
+                            ? 'bg-amber-500 text-white rounded-br-lg' 
+                            : 'bg-white text-slate-700 border border-slate-100 rounded-bl-lg'
+                        }`}>
+                          {msg.text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="p-4 bg-white border-t border-slate-100">
+                    <div className="flex gap-3">
+                      <input 
+                        type="text" 
+                        value={newMessage} 
+                        onChange={e => setNewMessage(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
+                        placeholder="Digite sua mensagem..." 
+                        className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-amber-500" 
+                      />
+                      <button onClick={handleSendMessage} className="p-4 bg-amber-500 text-white rounded-2xl shadow-lg active:scale-90 transition-all">
+                        <Send size={20}/>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ===================== ABA PERFIL ===================== */}
         {activeTab === 'profile' && (
           <div className="p-8 animate-fade-in max-w-lg mx-auto">
-             {!isEditing ? (
+            {!isEditing ? (
               <div className="flex flex-col items-center">
                 <div className="relative mb-8">
                   <div className="w-40 h-40 rounded-[48px] p-1.5 bg-gradient-to-tr from-amber-200 to-amber-500 shadow-2xl">
@@ -268,23 +574,48 @@ const App: React.FC = () => {
                 <h2 className="text-3xl font-serif font-bold text-slate-800">{state.currentUser.name}</h2>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">{state.currentUser.churchRole}</span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full">ID #{state.currentUser.id}</span>
+                  <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full">{state.currentUser.denomination}</span>
                 </div>
 
-                <div className="w-full mt-10 grid grid-cols-1 gap-4">
-                  <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
-                      <Church size={24}/>
+                {/* GPS Status */}
+                <div className="w-full mt-6">
+                  {locationStatus === 'idle' && (
+                    <button onClick={requestLocation} className="w-full flex items-center justify-center gap-3 py-4 bg-blue-50 text-blue-600 font-bold rounded-2xl border border-blue-100 active:scale-95 transition-all">
+                      <Navigation2 size={18}/> Ativar Localização GPS
+                    </button>
+                  )}
+                  {locationStatus === 'loading' && (
+                    <div className="w-full flex items-center justify-center gap-3 py-4 bg-blue-50 text-blue-500 rounded-2xl border border-blue-100">
+                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"/> Obtendo localização...
                     </div>
+                  )}
+                  {locationStatus === 'granted' && (
+                    <div className="w-full flex items-center justify-center gap-3 py-4 bg-emerald-50 text-emerald-600 font-bold rounded-2xl border border-emerald-100">
+                      <MapPin size={18}/> Localização ativa
+                    </div>
+                  )}
+                  {locationStatus === 'denied' && (
+                    <div className="w-full flex items-center justify-center gap-3 py-4 bg-red-50 text-red-500 rounded-2xl border border-red-100 text-sm">
+                      <AlertTriangle size={18}/> Localização negada. Ative nas configurações.
+                    </div>
+                  )}
+                </div>
+
+                {/* Botão Premium */}
+                <button onClick={() => setShowPremiumModal(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all">
+                  <Crown size={20}/> Seja Premium - R$ 29,90/mês
+                </button>
+
+                <div className="w-full mt-8 grid grid-cols-1 gap-4">
+                  <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500"><Church size={24}/></div>
                     <div>
                       <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Minha Congregação</h4>
                       <p className="text-slate-800 font-bold">{state.currentUser.churchName}</p>
                     </div>
                   </div>
                   <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500">
-                      <MapPin size={24}/>
-                    </div>
+                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500"><MapPin size={24}/></div>
                     <div>
                       <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Localização</h4>
                       <p className="text-slate-800 font-bold">{state.currentUser.location}</p>
@@ -292,7 +623,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
                     <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4 flex items-center gap-2"><Sparkles size={14}/> Testemunho</h4>
-                    <p className="text-slate-600 text-sm leading-relaxed italic italic font-medium">"{state.currentUser.faithJourney}"</p>
+                    <p className="text-slate-600 text-sm leading-relaxed italic font-medium">"{state.currentUser.faithJourney}"</p>
                   </div>
                   <button onClick={() => setIsEditing(true)} className="mt-4 w-full py-5 bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-100 transition-all">Editar Perfil Completo</button>
                 </div>
@@ -304,11 +635,10 @@ const App: React.FC = () => {
                   <h2 className="text-2xl font-serif font-bold text-slate-800">Meus Dados</h2>
                   <div className="w-12 h-12"></div>
                 </div>
-                
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nome de Membro</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nome</label>
                       <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none shadow-sm" />
                     </div>
                     <div className="space-y-2">
@@ -316,12 +646,10 @@ const App: React.FC = () => {
                       <input type="number" value={editForm.age} onChange={e => setEditForm({...editForm, age: parseInt(e.target.value)})} className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none shadow-sm" />
                     </div>
                   </div>
-                  
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Sua Igreja Específica</label>
-                    <input type="text" value={editForm.churchName} onChange={e => setEditForm({...editForm, churchName: e.target.value})} className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none shadow-sm" placeholder="Ex: Batista Central da Lagoinha" />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Sua Igreja</label>
+                    <input type="text" value={editForm.churchName} onChange={e => setEditForm({...editForm, churchName: e.target.value})} className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none shadow-sm" />
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Altura (cm)</label>
@@ -338,14 +666,12 @@ const App: React.FC = () => {
                       </select>
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Sua História com Jesus</label>
-                    <textarea rows={4} value={editForm.faithJourney} onChange={e => setEditForm({...editForm, faithJourney: e.target.value})} className="w-full bg-white border border-slate-100 rounded-[32px] px-6 py-5 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none shadow-sm" placeholder="Conte como Jesus transformou sua vida..." />
+                    <textarea rows={4} value={editForm.faithJourney} onChange={e => setEditForm({...editForm, faithJourney: e.target.value})} className="w-full bg-white border border-slate-100 rounded-[32px] px-6 py-5 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none shadow-sm" />
                   </div>
-
                   <button onClick={() => { setState(p => ({...p, currentUser: editForm})); setIsEditing(false); }} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-100 flex items-center justify-center gap-3 active:scale-95 transition-all">
-                    <Save size={20} /> Consagrar Perfil
+                    <Save size={20} /> Salvar Perfil
                   </button>
                 </div>
               </div>
@@ -358,15 +684,185 @@ const App: React.FC = () => {
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} role={state.currentUser.role} />
 
-      {/* Match Modal Premium */}
+      {/* ===================== MODAL DE FILTROS ===================== */}
+      {showFilter && (
+        <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-end justify-center animate-fade-in">
+          <div className="bg-white w-full max-w-lg rounded-t-[40px] p-8 shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-serif font-bold text-slate-800">Busca Refinada</h3>
+              <button onClick={() => setShowFilter(false)} className="p-2 bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
+            </div>
+            <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 pb-6">
+              <div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-sm font-bold text-slate-700">Raio de Distância</span>
+                  <span className="text-sm text-amber-600 font-bold">{state.filters.maxDistance} km</span>
+                </div>
+                <input type="range" min="1" max="500" value={state.filters.maxDistance} onChange={e => setState(p => ({ ...p, filters: { ...p.filters, maxDistance: parseInt(e.target.value) } }))} className="w-full accent-amber-500" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Ruler size={14}/> Preferência de Altura</h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {[0, 160, 170, 180].map(h => (
+                    <button key={h} onClick={() => setState(p => ({ ...p, filters: { ...p.filters, preferredHeight: h || undefined } }))}
+                      className={`py-3 rounded-2xl text-xs font-bold transition-all border ${state.filters.preferredHeight === h ? 'bg-amber-500 border-amber-500 text-white' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
+                      {h === 0 ? 'Tanto faz' : `+${h}cm`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><UserCheck size={14}/> Característica Física</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  {['Morena', 'Moreno', 'Loira', 'Loiro', 'Ruiva', 'Ruivo'].map(c => (
+                    <button key={c} onClick={() => setState(p => ({ ...p, filters: { ...p.filters, preferredHairColor: state.filters.preferredHairColor === c ? undefined : c } }))}
+                      className={`py-3 rounded-2xl text-xs font-bold transition-all border ${state.filters.preferredHairColor === c ? 'bg-amber-500 border-amber-500 text-white' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-sm font-bold text-slate-700">Faixa de Idade</span>
+                  <span className="text-sm text-amber-600 font-bold">{state.filters.minAge} - {state.filters.maxAge}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <input type="range" min="18" max="60" value={state.filters.minAge} onChange={e => setState(p => ({ ...p, filters: { ...p.filters, minAge: parseInt(e.target.value) } }))} className="w-full accent-amber-500" />
+                  <input type="range" min="18" max="60" value={state.filters.maxAge} onChange={e => setState(p => ({ ...p, filters: { ...p.filters, maxAge: parseInt(e.target.value) } }))} className="w-full accent-amber-500" />
+                </div>
+              </div>
+            </div>
+            <button onClick={() => setShowFilter(false)} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl mt-4 active:scale-95 transition-all">Aplicar Filtros</button>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== MODAL DE DENÚNCIA ===================== */}
+      {showReport && (
+        <div className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl animate-scale-up">
+            {!reportSent ? (
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500"><Flag size={24}/></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800">Denunciar Usuário</h3>
+                    <p className="text-slate-400 text-xs">{reportTarget?.name}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Motivo da Denúncia</label>
+                    <select value={reportReason} onChange={e => setReportReason(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-red-500 outline-none appearance-none">
+                      <option value="">Selecione um motivo</option>
+                      <option>Perfil falso / Golpe</option>
+                      <option>Fotos inapropriadas</option>
+                      <option>Comportamento ofensivo</option>
+                      <option>Assédio ou ameaça</option>
+                      <option>Spam ou propaganda</option>
+                      <option>Menor de idade</option>
+                      <option>Conteúdo impróprio</option>
+                      <option>Outro</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Descreva o problema</label>
+                    <textarea rows={3} value={reportDescription} onChange={e => setReportDescription(e.target.value)} placeholder="Conte o que aconteceu..." className="w-full bg-slate-50 border border-slate-100 rounded-[24px] px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-red-500 outline-none resize-none" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-8">
+                  <button onClick={() => { setShowReport(false); setReportReason(''); setReportDescription(''); }} className="py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl">Cancelar</button>
+                  <button onClick={handleReport} className="py-4 bg-red-500 text-white font-bold rounded-2xl active:scale-95 transition-all">Denunciar</button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-500">
+                  <ShieldCheck size={32}/>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">Denúncia Enviada</h3>
+                <p className="text-slate-400 mt-2 text-sm">Nossa equipe vai analisar o caso. Obrigado por ajudar a manter a comunidade segura.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===================== MODAL PREMIUM ===================== */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl animate-scale-up">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white shadow-xl"><Crown size={32}/></div>
+              <h3 className="text-2xl font-serif font-bold text-slate-800">Conexão Divina Premium</h3>
+              <p className="text-slate-400 mt-2">Desbloqueie todas as funcionalidades</p>
+            </div>
+            <div className="space-y-3 mb-8">
+              {['Likes ilimitados', 'Ver quem curtiu você', 'Filtros avançados', 'Destaque no perfil', 'Sem anúncios', 'Suporte prioritário'].map(f => (
+                <div key={f} className="flex items-center gap-3 p-3 bg-amber-50 rounded-2xl">
+                  <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs">✓</div>
+                  <span className="text-sm font-medium text-slate-700">{f}</span>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mb-6">
+              <span className="text-4xl font-black text-slate-800">R$ 29,90</span>
+              <span className="text-slate-400">/mês</span>
+            </div>
+            <button onClick={() => window.location.href = '/premium'} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all">
+              Assinar Agora
+            </button>
+            <button onClick={() => setShowPremiumModal(false)} className="w-full py-4 text-slate-400 font-bold mt-2">Depois</button>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== MODAL CONFIGURAÇÕES ===================== */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-end justify-center animate-fade-in">
+          <div className="bg-white w-full max-w-lg rounded-t-[40px] p-8 shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-serif font-bold text-slate-800">Configurações</h3>
+              <button onClick={() => setShowSettings(false)} className="p-2 bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
+            </div>
+            <div className="space-y-3">
+              <button className="w-full flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all">
+                <div className="flex items-center gap-3"><Bell size={20} className="text-slate-400"/> <span className="font-medium text-slate-700">Notificações</span></div>
+                <ChevronRight size={18} className="text-slate-300"/>
+              </button>
+              <button className="w-full flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all">
+                <div className="flex items-center gap-3"><Lock size={20} className="text-slate-400"/> <span className="font-medium text-slate-700">Privacidade</span></div>
+                <ChevronRight size={18} className="text-slate-300"/>
+              </button>
+              <button className="w-full flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all">
+                <div className="flex items-center gap-3"><Shield size={20} className="text-slate-400"/> <span className="font-medium text-slate-700">Segurança</span></div>
+                <ChevronRight size={18} className="text-slate-300"/>
+              </button>
+              <button className="w-full flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all">
+                <div className="flex items-center gap-3"><BookOpen size={20} className="text-slate-400"/> <span className="font-medium text-slate-700">Termos de Uso</span></div>
+                <ChevronRight size={18} className="text-slate-300"/>
+              </button>
+              <button className="w-full flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all">
+                <div className="flex items-center gap-3"><Phone size={20} className="text-slate-400"/> <span className="font-medium text-slate-700">Suporte</span></div>
+                <ChevronRight size={18} className="text-slate-300"/>
+              </button>
+              <button onClick={() => { setScreen('welcome'); setShowSettings(false); }} className="w-full flex items-center justify-center gap-3 p-5 bg-red-50 text-red-500 font-bold rounded-2xl mt-4 hover:bg-red-100 transition-all">
+                <LogOut size={20}/> Sair da Conta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== MODAL MATCH ===================== */}
       {matchModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-8 bg-slate-900/90 backdrop-blur-xl animate-fade-in">
           <div className="relative w-full max-w-sm bg-white rounded-[60px] overflow-hidden shadow-2xl p-10 text-center animate-scale-up">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-200 via-amber-500 to-amber-200"></div>
             <Sparkles size={48} className="mx-auto text-amber-500 mb-4 animate-bounce" />
-            <h2 className="text-4xl font-serif text-slate-900 font-bold mb-2">Um Propósito!</h2>
-            <p className="text-slate-500 font-medium mb-10">Vocês têm afinidade espiritual e física.</p>
-            
+            <h2 className="text-4xl font-serif text-slate-900 font-bold mb-2">Match!</h2>
+            <p className="text-slate-500 font-medium mb-10">Vocês têm afinidade espiritual.</p>
             <div className="flex justify-center -space-x-8 mb-10">
               <div className="w-28 h-28 rounded-[40px] border-4 border-white shadow-2xl overflow-hidden rotate-[-6deg]">
                 <img src={state.currentUser.imageUrl} className="w-full h-full object-cover" />
@@ -375,12 +871,6 @@ const App: React.FC = () => {
                 <img src={matchModal.imageUrl} className="w-full h-full object-cover" />
               </div>
             </div>
-
-            <div className="bg-amber-50/80 p-6 rounded-[32px] border border-amber-100 mb-10 text-left">
-              <h5 className="text-[10px] font-black text-amber-600 uppercase mb-3 tracking-widest flex items-center gap-2"><UserCheck size={14}/> Discernimento Pastoral</h5>
-              <p className="text-sm text-amber-900 leading-relaxed italic font-medium">{insight}</p>
-            </div>
-
             <div className="space-y-4">
               <button onClick={() => { setActiveTab('chat'); setMatchModal(null); setActiveChat(state.matches.find(m => m.users.includes(matchModal.id)) || null); }} className="w-full py-5 bg-slate-900 text-white font-bold rounded-2xl shadow-2xl hover:bg-slate-800 transition-all">Iniciar Conversa</button>
               <button onClick={() => setMatchModal(null)} className="w-full py-4 text-slate-400 font-bold hover:text-slate-600">Mais Tarde</button>
@@ -397,13 +887,8 @@ const App: React.FC = () => {
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes scaleUp { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         input[type='range']::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          height: 24px;
-          width: 24px;
-          border-radius: 50%;
-          background: #f59e0b;
-          box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
-          cursor: pointer;
+          -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%;
+          background: #f59e0b; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4); cursor: pointer;
         }
       `}</style>
     </div>
