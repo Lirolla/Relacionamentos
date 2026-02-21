@@ -1,11 +1,19 @@
 
-import { GoogleGenAI } from "@google/genai";
 import { Profile } from "../types";
 
-// Always use the process.env.API_KEY directly for initialization as per Google GenAI SDK guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: any = null;
+try {
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  if (apiKey) {
+    const { GoogleGenAI } = require("@google/genai");
+    ai = new GoogleGenAI({ apiKey });
+  }
+} catch (e) {
+  // No API key available
+}
 
 export const getDivineInsight = async (user1: Profile, user2: Profile) => {
+  if (!ai) return "O amor é o vínculo da perfeição. Esta conexão tem um belo potencial espiritual!";
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
