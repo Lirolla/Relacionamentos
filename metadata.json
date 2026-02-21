@@ -1,0 +1,7 @@
+{
+  "name": "Conexão Divina",
+  "description": "Um aplicativo de relacionamento cristão focado em valores e fé, ajudando solteiros da igreja a encontrarem seu propósito juntos.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
