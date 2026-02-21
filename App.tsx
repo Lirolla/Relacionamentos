@@ -24,7 +24,15 @@ import SafeMode from './components/SafeMode';
 import BibleReadingPlan from './components/BibleReadingPlan';
 import ChurchMap from './components/ChurchMap';
 import MatchAnimation from './components/MatchAnimation';
-import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award, Video, Moon, Sun } from 'lucide-react';
+import ChristianReels from './components/ChristianReels';
+import { VoiceMessageRecorder, VoiceMessagePlayer, VoiceButton } from './components/VoiceMessage';
+import PhotoGallery from './components/PhotoGallery';
+import AdvancedFilters from './components/AdvancedFilters';
+import SplashScreen from './components/SplashScreen';
+import BlockReport from './components/BlockReport';
+import ShareProfile from './components/ShareProfile';
+import SettingsPage from './components/SettingsPage';
+import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award, Video, Moon, Sun, Mic, Share2, Film, Image } from 'lucide-react';
 
 // ===================== TELA DE ENTRADA =====================
 const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLogin, onRegister }) => (
@@ -258,6 +266,7 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
 
 // ===================== APP PRINCIPAL =====================
 const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const [screen, setScreen] = useState<'welcome' | 'login' | 'register' | 'app'>('welcome');
   const [state, setState] = useState(INITIAL_STATE);
   const [activeTab, setActiveTab] = useState<'swipe' | 'chat' | 'profile' | 'admin' | 'favorites' | 'community' | 'prayer'>('swipe');
@@ -328,6 +337,18 @@ const App: React.FC = () => {
   const [showBiblePlan, setShowBiblePlan] = useState(false);
   const [showChurchMap, setShowChurchMap] = useState(false);
   const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true');
+
+  // Funcionalidades v5
+  const [showReels, setShowReels] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [voiceMessages, setVoiceMessages] = useState<{[chatId: string]: {duration: number; waveform: number[]; isSent: boolean}[]}>({});
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showBlockReport, setShowBlockReport] = useState(false);
+  const [blockReportTarget, setBlockReportTarget] = useState<{name: string; photo: string} | null>(null);
+  const [showShareProfile, setShowShareProfile] = useState(false);
+  const [shareTarget, setShareTarget] = useState<{name: string; photo: string; age: number; church: string} | null>(null);
+  const [showSettingsPage, setShowSettingsPage] = useState(false);
+  const [userPhotos, setUserPhotos] = useState<string[]>([]);
 
   // Persistir dark mode
   useEffect(() => {
@@ -430,6 +451,7 @@ const App: React.FC = () => {
   };
 
   // ===================== TELAS DE ENTRADA =====================
+  if (showSplash) return <SplashScreen onFinish={() => setShowSplash(false)} />;
   if (showOnboarding) return <Onboarding onComplete={() => { setShowOnboarding(false); localStorage.setItem('onboarding_done', 'true'); }} />;
   if (showForgotPassword) return <ForgotPassword onSubmit={(email) => { alert('Email de recuperação enviado para ' + email); setShowForgotPassword(false); }} onBack={() => setShowForgotPassword(false)} />;
   if (screen === 'welcome') return <WelcomeScreen onLogin={() => setScreen('login')} onRegister={() => setScreen('register')} />;
@@ -457,10 +479,13 @@ const App: React.FC = () => {
           <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-amber-500 text-white border-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          <button onClick={() => setShowFilter(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
+          <button onClick={() => setShowAdvancedFilters(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             <SlidersHorizontal size={20} />
           </button>
-          <button onClick={() => setShowSettings(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
+          <button onClick={() => setShowReels(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
+            <Film size={20} />
+          </button>
+          <button onClick={() => setShowSettingsPage(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             <Settings size={20} />
           </button>
         </div>
@@ -482,12 +507,19 @@ const App: React.FC = () => {
                 >
                   <Star size={24} fill={state.favorites.includes(currentProfile.id) ? 'currentColor' : 'none'} />
                 </button>
-                {/* Botão Denunciar */}
+                {/* Botão Bloquear/Denunciar */}
                 <button 
-                  onClick={() => { setReportTarget(currentProfile); setShowReport(true); }}
+                  onClick={() => { setBlockReportTarget({name: currentProfile.name, photo: currentProfile.photoUrl}); setShowBlockReport(true); }}
                   className="absolute top-4 left-4 p-3 rounded-full bg-white/20 backdrop-blur-xl text-white/70 hover:text-red-400 transition-all z-10 border border-white/20"
                 >
                   <Flag size={18} />
+                </button>
+                {/* Botão Compartilhar Perfil */}
+                <button 
+                  onClick={() => { setShareTarget({name: currentProfile.name, photo: currentProfile.photoUrl, age: currentProfile.age, church: currentProfile.churchName || 'Igreja Cristã'}); setShowShareProfile(true); }}
+                  className="absolute top-16 left-4 p-3 rounded-full bg-white/20 backdrop-blur-xl text-white/70 hover:text-blue-400 transition-all z-10 border border-white/20"
+                >
+                  <Share2 size={18} />
                 </button>
                 {/* Badge mesma igreja */}
                 {currentProfile.churchName === state.currentUser.churchName && (
@@ -640,19 +672,36 @@ const App: React.FC = () => {
                   </div>
                   
                   <div className="p-4 bg-white border-t border-slate-100">
-                    <div className="flex gap-3">
-                      <input 
-                        type="text" 
-                        value={newMessage} 
-                        onChange={e => setNewMessage(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="Digite sua mensagem..." 
-                        className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-amber-500" 
+                    {isRecordingVoice ? (
+                      <VoiceMessageRecorder
+                        onSend={(duration, waveform) => {
+                          const chatId = activeChat.id;
+                          setVoiceMessages(prev => ({
+                            ...prev,
+                            [chatId]: [...(prev[chatId] || []), { duration, waveform, isSent: true }]
+                          }));
+                          setIsRecordingVoice(false);
+                        }}
+                        onCancel={() => setIsRecordingVoice(false)}
                       />
-                      <button onClick={handleSendMessage} className="p-4 bg-amber-500 text-white rounded-2xl shadow-lg active:scale-90 transition-all">
-                        <Send size={20}/>
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button onClick={() => setIsRecordingVoice(true)} className="p-4 bg-slate-100 text-slate-500 rounded-2xl hover:bg-amber-50 hover:text-amber-600 transition-all">
+                          <Mic size={20}/>
+                        </button>
+                        <input 
+                          type="text" 
+                          value={newMessage} 
+                          onChange={e => setNewMessage(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
+                          placeholder="Digite sua mensagem..." 
+                          className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-amber-500" 
+                        />
+                        <button onClick={handleSendMessage} className="p-4 bg-amber-500 text-white rounded-2xl shadow-lg active:scale-90 transition-all">
+                          <Send size={20}/>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               );
@@ -742,6 +791,12 @@ const App: React.FC = () => {
                   <Crown size={20}/> Seja Premium - R$ 29,90/mês
                 </button>
 
+                {/* Galeria de Fotos */}
+                <div className="w-full mt-6">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Image size={14}/> Minhas Fotos</h3>
+                  <PhotoGallery photos={userPhotos} onUpdatePhotos={setUserPhotos} editable={false} maxPhotos={9} />
+                </div>
+
                 {/* Estatísticas do Perfil */}
                 <ProfileStats stats={{ views: 127, likes: 43, matches: 12, matchRate: 68, likedBy: 89 }} isPremium={false} onUpgrade={() => setShowPremiumModal(true)} />
 
@@ -780,6 +835,9 @@ const App: React.FC = () => {
                     <p className="text-slate-600 text-sm leading-relaxed italic font-medium">"{state.currentUser.faithJourney}"</p>
                   </div>
                   <button onClick={() => setIsEditing(true)} className="mt-4 w-full py-5 bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-100 transition-all">Editar Perfil Completo</button>
+                  <button onClick={() => setShowSettingsPage(true)} className="mt-3 w-full py-5 bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-100 transition-all flex items-center justify-center gap-2">
+                    <Settings size={18}/> Configurações
+                  </button>
                 </div>
               </div>
             ) : (
@@ -1147,6 +1205,51 @@ const App: React.FC = () => {
       {/* ===================== MAPA DE IGREJAS ===================== */}
       {showChurchMap && (
         <ChurchMap onClose={() => setShowChurchMap(false)} />
+      )}
+
+      {/* ===================== REELS CRISTÃOS ===================== */}
+      {showReels && (
+        <ChristianReels onClose={() => setShowReels(false)} />
+      )}
+
+      {/* ===================== FILTROS AVANÇADOS ===================== */}
+      {showAdvancedFilters && (
+        <AdvancedFilters
+          onApply={(filters) => console.log('Filters applied:', filters)}
+          onClose={() => setShowAdvancedFilters(false)}
+        />
+      )}
+
+      {/* ===================== BLOQUEAR/DENUNCIAR ===================== */}
+      {showBlockReport && blockReportTarget && (
+        <BlockReport
+          userName={blockReportTarget.name}
+          userPhoto={blockReportTarget.photo}
+          onBlock={() => { console.log('User blocked'); setShowBlockReport(false); setBlockReportTarget(null); }}
+          onReport={(reason, desc) => { console.log('Report:', reason, desc); setShowBlockReport(false); setBlockReportTarget(null); }}
+          onClose={() => { setShowBlockReport(false); setBlockReportTarget(null); }}
+        />
+      )}
+
+      {/* ===================== COMPARTILHAR PERFIL ===================== */}
+      {showShareProfile && shareTarget && (
+        <ShareProfile
+          userName={shareTarget.name}
+          userPhoto={shareTarget.photo}
+          userAge={shareTarget.age}
+          userChurch={shareTarget.church}
+          onClose={() => { setShowShareProfile(false); setShareTarget(null); }}
+        />
+      )}
+
+      {/* ===================== CONFIGURAÇÕES COMPLETAS ===================== */}
+      {showSettingsPage && (
+        <SettingsPage
+          onClose={() => setShowSettingsPage(false)}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onLogout={() => { setScreen('welcome'); setShowSettingsPage(false); }}
+        />
       )}
 
       <style>{`

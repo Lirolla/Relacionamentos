@@ -988,10 +988,168 @@ app.put('/api/calls/:id/end', (req, res) => {
 });
 
 // =====================================================
+// ===== REELS CRISTÃOS =====
+// =====================================================
+let reels = [
+  { id: 'r1', userId: '2', userName: 'Sarah Oliveira', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', videoUrl: '', thumbnailUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', description: 'Louvor na igreja hoje! 🎵', category: 'worship', likes: 234, comments: 45, shares: 12, views: 1520, createdAt: new Date().toISOString(), pastorVerified: true },
+  { id: 'r2', userId: '3', userName: 'Gabriel Santos', userPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', videoUrl: '', thumbnailUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400', description: 'Meu testemunho de vida', category: 'testimony', likes: 567, comments: 89, shares: 34, views: 3200, createdAt: new Date().toISOString(), pastorVerified: false },
+];
+
+app.get('/api/reels', (req, res) => {
+  const { category } = req.query;
+  let filtered = reels;
+  if (category && category !== 'all') filtered = reels.filter(r => r.category === category);
+  res.json(filtered);
+});
+
+app.post('/api/reels', (req, res) => {
+  const reel = { id: `r${Date.now()}`, ...req.body, likes: 0, comments: 0, shares: 0, views: 0, createdAt: new Date().toISOString() };
+  reels.unshift(reel);
+  res.status(201).json(reel);
+});
+
+app.put('/api/reels/:id/like', (req, res) => {
+  const reel = reels.find(r => r.id === req.params.id);
+  if (!reel) return res.status(404).json({ error: 'Reel não encontrado' });
+  reel.likes++;
+  res.json(reel);
+});
+
+app.put('/api/reels/:id/view', (req, res) => {
+  const reel = reels.find(r => r.id === req.params.id);
+  if (!reel) return res.status(404).json({ error: 'Reel não encontrado' });
+  reel.views++;
+  res.json(reel);
+});
+
+app.delete('/api/reels/:id', (req, res) => {
+  reels = reels.filter(r => r.id !== req.params.id);
+  res.json({ success: true });
+});
+
+// =====================================================
+// ===== VOICE MESSAGES =====
+// =====================================================
+let voiceMessages = [];
+
+app.post('/api/voice-messages', (req, res) => {
+  const msg = { id: `vm${Date.now()}`, ...req.body, createdAt: new Date().toISOString() };
+  voiceMessages.push(msg);
+  res.status(201).json(msg);
+});
+
+app.get('/api/voice-messages/:chatId', (req, res) => {
+  const msgs = voiceMessages.filter(m => m.chatId === req.params.chatId);
+  res.json(msgs);
+});
+
+// =====================================================
+// ===== PHOTO GALLERY =====
+// =====================================================
+let userPhotos = {};
+
+app.get('/api/users/:id/photos', (req, res) => {
+  res.json(userPhotos[req.params.id] || []);
+});
+
+app.post('/api/users/:id/photos', (req, res) => {
+  const userId = req.params.id;
+  if (!userPhotos[userId]) userPhotos[userId] = [];
+  const photo = { id: `ph${Date.now()}`, url: req.body.url, isMain: userPhotos[userId].length === 0, uploadedAt: new Date().toISOString() };
+  userPhotos[userId].push(photo);
+  res.status(201).json(photo);
+});
+
+app.delete('/api/users/:id/photos/:photoId', (req, res) => {
+  const userId = req.params.id;
+  if (userPhotos[userId]) {
+    userPhotos[userId] = userPhotos[userId].filter(p => p.id !== req.params.photoId);
+  }
+  res.json({ success: true });
+});
+
+app.put('/api/users/:id/photos/:photoId/main', (req, res) => {
+  const userId = req.params.id;
+  if (userPhotos[userId]) {
+    userPhotos[userId] = userPhotos[userId].map(p => ({ ...p, isMain: p.id === req.params.photoId }));
+  }
+  res.json({ success: true });
+});
+
+// =====================================================
+// ===== ADVANCED FILTERS =====
+// =====================================================
+app.post('/api/search/advanced', (req, res) => {
+  const { minAge, maxAge, maxDistance, denominations, churchFrequency, verified, pastorVerified, onlineNow, relationshipGoal, interests } = req.body;
+  let filtered = users.filter(u => u.status === 'active' && !u.isBlocked);
+  if (minAge) filtered = filtered.filter(u => u.age >= minAge);
+  if (maxAge) filtered = filtered.filter(u => u.age <= maxAge);
+  if (denominations && denominations.length > 0) filtered = filtered.filter(u => denominations.includes(u.denomination));
+  if (verified) filtered = filtered.filter(u => u.isVerified);
+  res.json({ results: filtered, total: filtered.length });
+});
+
+// =====================================================
+// ===== BLOCK & REPORT =====
+// =====================================================
+let blockedUsers = [];
+
+app.post('/api/users/:id/block', (req, res) => {
+  const block = { id: `bl${Date.now()}`, blockerId: req.body.blockerId, blockedId: req.params.id, createdAt: new Date().toISOString() };
+  blockedUsers.push(block);
+  res.status(201).json({ success: true, message: 'Usuário bloqueado' });
+});
+
+app.delete('/api/users/:id/block', (req, res) => {
+  blockedUsers = blockedUsers.filter(b => !(b.blockerId === req.body.blockerId && b.blockedId === req.params.id));
+  res.json({ success: true, message: 'Usuário desbloqueado' });
+});
+
+app.get('/api/users/:id/blocked', (req, res) => {
+  const blocked = blockedUsers.filter(b => b.blockerId === req.params.id);
+  res.json(blocked);
+});
+
+// =====================================================
+// ===== SHARE PROFILE =====
+// =====================================================
+app.post('/api/users/:id/share', (req, res) => {
+  const { platform, sharedBy } = req.body;
+  const shareLink = `https://conexaodivina.app/perfil/${req.params.id}`;
+  res.json({ success: true, shareLink, platform });
+});
+
+// =====================================================
+// ===== USER SETTINGS =====
+// =====================================================
+let userSettings = {};
+
+app.get('/api/users/:id/settings', (req, res) => {
+  res.json(userSettings[req.params.id] || {
+    notifications: { matches: true, messages: true, likes: true, events: true, prayers: true, devotional: true, community: false, marketing: false, sound: true, vibration: true },
+    privacy: { showOnline: true, showDistance: true, showAge: true, showChurch: true, readReceipts: true, profileVisible: true, showInSearch: true },
+    darkMode: false,
+    language: 'pt-BR',
+  });
+});
+
+app.put('/api/users/:id/settings', (req, res) => {
+  userSettings[req.params.id] = { ...userSettings[req.params.id], ...req.body };
+  res.json(userSettings[req.params.id]);
+});
+
+app.delete('/api/users/:id/account', (req, res) => {
+  users = users.filter(u => u.id !== req.params.id);
+  delete userSettings[req.params.id];
+  delete userPhotos[req.params.id];
+  res.json({ success: true, message: 'Conta excluída permanentemente' });
+});
+
+// =====================================================
 // ===== HEALTH CHECK =====
 // =====================================================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now(), version: '4.0.0' });
+  res.json({ status: 'ok', timestamp: Date.now(), version: '5.0.0' });
 });
 
 // =====================================================
@@ -999,7 +1157,7 @@ app.get('/api/health', (req, res) => {
 // =====================================================
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Conexão Divina API v4.0 rodando na porta ${PORT}`);
+  console.log(`🚀 Conexão Divina API v5.0 rodando na porta ${PORT}`);
   console.log(`📊 ${users.length} usuários | ${churches.length} igrejas | ${events.length} eventos`);
-  console.log(`🆕 Video Verification | Audio/Video Chat | Safe Mode | Bible Plans | Church Map | Reputation`);
+  console.log(`🆕 Reels | Voice Messages | Photo Gallery | Advanced Filters | Block/Report | Share | Settings`);
 });
