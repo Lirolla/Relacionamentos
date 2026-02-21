@@ -43,7 +43,7 @@ const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> =
 );
 
 // ===================== TELA DE LOGIN =====================
-const LoginScreen: React.FC<{ onLogin: () => void; onBack: () => void }> = ({ onLogin, onBack }) => {
+const LoginScreen: React.FC<{ onLogin: () => void; onBack: () => void; onForgotPassword: () => void }> = ({ onLogin, onBack, onForgotPassword }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -76,7 +76,7 @@ const LoginScreen: React.FC<{ onLogin: () => void; onBack: () => void }> = ({ on
             </div>
           </div>
           
-          <button onClick={() => setShowForgotPassword(true)} className="text-amber-600 text-sm font-bold self-end">Esqueci minha senha</button>
+          <button onClick={onForgotPassword} className="text-amber-600 text-sm font-bold self-end">Esqueci minha senha</button>
           
           <button onClick={onLogin} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
             Entrar
@@ -399,7 +399,7 @@ const App: React.FC = () => {
   if (showOnboarding) return <Onboarding onComplete={() => { setShowOnboarding(false); localStorage.setItem('onboarding_done', 'true'); }} />;
   if (showForgotPassword) return <ForgotPassword onSubmit={(email) => { alert('Email de recuperação enviado para ' + email); setShowForgotPassword(false); }} onBack={() => setShowForgotPassword(false)} />;
   if (screen === 'welcome') return <WelcomeScreen onLogin={() => setScreen('login')} onRegister={() => setScreen('register')} />;
-  if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
+  if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')} onBack={() => setScreen('welcome')} onForgotPassword={() => setShowForgotPassword(true)} />;
   if (screen === 'register') return <RegisterScreen onRegister={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
 
   // ===================== APP PRINCIPAL =====================
