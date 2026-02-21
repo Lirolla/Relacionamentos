@@ -5,6 +5,14 @@ import { Profile, Match, UserRole, Message, AppFilters } from './types';
 import Navigation from './components/Navigation';
 import SwipeCard from './components/SwipeCard';
 import AdminPanel from './components/AdminPanel';
+import Onboarding from './components/Onboarding';
+import IdentityVerification from './components/IdentityVerification';
+import Stories from './components/Stories';
+import Events from './components/Events';
+import ProfileStats from './components/ProfileStats';
+import Icebreakers from './components/Icebreakers';
+import OfflineDetector from './components/OfflineDetector';
+import ForgotPassword from './components/ForgotPassword';
 import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User } from 'lucide-react';
 
 // ===================== TELA DE ENTRADA =====================
@@ -68,7 +76,7 @@ const LoginScreen: React.FC<{ onLogin: () => void; onBack: () => void }> = ({ on
             </div>
           </div>
           
-          <button className="text-amber-600 text-sm font-bold self-end">Esqueci minha senha</button>
+          <button onClick={() => setShowForgotPassword(true)} className="text-amber-600 text-sm font-bold self-end">Esqueci minha senha</button>
           
           <button onClick={onLogin} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
             Entrar
@@ -267,6 +275,33 @@ const App: React.FC = () => {
   // Igrejas
   const [showChurches, setShowChurches] = useState(false);
 
+  // Onboarding
+  const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem('onboarding_done'));
+
+  // Verificação de Identidade
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<'none'|'pending'|'verified'|'rejected'>('none');
+
+  // Stories
+  const [stories, setStories] = useState([
+    { id: 's1', userId: 'p1', userName: 'Maria Santos', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', createdAt: new Date().toISOString() },
+    { id: 's2', userId: 'p2', userName: 'Ana Costa', userPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100', imageUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400', createdAt: new Date().toISOString() },
+  ]);
+
+  // Events
+  const [showEvents, setShowEvents] = useState(false);
+  const [events, setEvents] = useState([
+    { id: 'e1', title: 'Retiro de Casais', description: 'Retiro especial para casais e solteiros', date: '2026-03-15', time: '08:00', location: 'Chácara Esperança, SP', church: 'Igreja Batista Central', attendees: 45, type: 'retiro' },
+    { id: 'e2', title: 'Culto de Jovens', description: 'Culto especial com louvor e palavra', date: '2026-03-01', time: '19:30', location: 'Igreja Presbiteriana, RJ', church: 'Igreja Presbiteriana', attendees: 120, type: 'culto' },
+    { id: 'e3', title: 'Conferência de Solteiros', description: 'Conferência sobre relacionamentos cristãos', date: '2026-04-10', time: '14:00', location: 'Centro de Convenções, MG', church: 'AD Vitória', attendees: 200, type: 'conferencia' },
+  ]);
+
+  // Forgot Password
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Icebreakers
+  const [showIcebreakers, setShowIcebreakers] = useState(false);
+
   // GPS - Solicitar localização
   const requestLocation = () => {
     setLocationStatus('loading');
@@ -361,6 +396,8 @@ const App: React.FC = () => {
   };
 
   // ===================== TELAS DE ENTRADA =====================
+  if (showOnboarding) return <Onboarding onComplete={() => { setShowOnboarding(false); localStorage.setItem('onboarding_done', 'true'); }} />;
+  if (showForgotPassword) return <ForgotPassword onSubmit={(email) => { alert('Email de recuperação enviado para ' + email); setShowForgotPassword(false); }} onBack={() => setShowForgotPassword(false)} />;
   if (screen === 'welcome') return <WelcomeScreen onLogin={() => setScreen('login')} onRegister={() => setScreen('register')} />;
   if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
   if (screen === 'register') return <RegisterScreen onRegister={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
@@ -391,7 +428,10 @@ const App: React.FC = () => {
       <main className="flex-1 relative overflow-hidden pb-20">
         {/* ===================== ABA EXPLORAR ===================== */}
         {activeTab === 'swipe' && (
-          <div className="h-full flex flex-col items-center justify-center p-4">
+          <div className="h-full flex flex-col items-center p-4">
+            {/* Stories */}
+            <Stories stories={stories} currentUserId={state.currentUser.id} onPostStory={(file) => console.log('post story', file)} onViewStory={(id) => console.log('view story', id)} />
+
             {currentProfile ? (
               <div className="relative w-full max-w-sm">
                 <SwipeCard profile={currentProfile} onSwipeRight={handleSwipeRight} onSwipeLeft={(id) => setState(p => ({ ...p, swipedLeft: [...p.swipedLeft, id] }))} />
@@ -519,9 +559,12 @@ const App: React.FC = () => {
                   
                   <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {activeChat.messages.length === 0 && (
-                      <div className="text-center py-12 opacity-40">
-                        <Heart size={32} className="mx-auto text-amber-300 mb-3"/>
-                        <p className="text-slate-400 text-sm">Vocês deram match! Comece a conversa.</p>
+                      <div>
+                        <div className="text-center py-6 opacity-40">
+                          <Heart size={32} className="mx-auto text-amber-300 mb-3"/>
+                          <p className="text-slate-400 text-sm">Vocês deram match! Comece a conversa.</p>
+                        </div>
+                        <Icebreakers targetName={other?.name || 'essa pessoa'} targetChurch={other?.churchName} onSelectMessage={(text) => { setNewMessage(text); }} />
                       </div>
                     )}
                     {activeChat.messages.map(msg => (
@@ -601,9 +644,34 @@ const App: React.FC = () => {
                   )}
                 </div>
 
+                {/* Verificação de Identidade */}
+                {verificationStatus === 'none' && (
+                  <button onClick={() => setShowVerification(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-4 bg-emerald-50 text-emerald-600 font-bold rounded-2xl border border-emerald-100 active:scale-95 transition-all">
+                    <ShieldCheck size={18}/> Verificar Minha Identidade
+                  </button>
+                )}
+                {verificationStatus === 'pending' && (
+                  <div className="w-full mt-4 flex items-center justify-center gap-3 py-4 bg-yellow-50 text-yellow-600 font-bold rounded-2xl border border-yellow-100">
+                    <ShieldCheck size={18}/> Verificação em Análise...
+                  </div>
+                )}
+                {verificationStatus === 'verified' && (
+                  <div className="w-full mt-4 flex items-center justify-center gap-3 py-4 bg-emerald-50 text-emerald-600 font-bold rounded-2xl border border-emerald-100">
+                    <ShieldCheck size={18}/> Perfil Verificado ✓
+                  </div>
+                )}
+
                 {/* Botão Premium */}
                 <button onClick={() => setShowPremiumModal(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all">
                   <Crown size={20}/> Seja Premium - R$ 29,90/mês
+                </button>
+
+                {/* Estatísticas do Perfil */}
+                <ProfileStats stats={{ views: 127, likes: 43, matches: 12, matchRate: 68, likedBy: 89 }} isPremium={false} onUpgrade={() => setShowPremiumModal(true)} />
+
+                {/* Eventos Cristãos */}
+                <button onClick={() => setShowEvents(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-4 bg-purple-50 text-purple-600 font-bold rounded-2xl border border-purple-100 active:scale-95 transition-all">
+                  <Calendar size={18}/> Eventos Cristãos Próximos
                 </button>
 
                 <div className="w-full mt-8 grid grid-cols-1 gap-4">
@@ -854,6 +922,29 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ===================== VERIFICAÇÃO DE IDENTIDADE ===================== */}
+      {showVerification && (
+        <IdentityVerification 
+          onClose={() => setShowVerification(false)} 
+          onSubmit={(file) => { setVerificationStatus('pending'); setShowVerification(false); }} 
+          status={verificationStatus}
+        />
+      )}
+
+      {/* ===================== EVENTOS CRISTÃOS ===================== */}
+      {showEvents && (
+        <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-xl font-bold">Eventos</h2>
+            <button onClick={() => setShowEvents(false)} className="p-2 text-slate-500"><X size={24}/></button>
+          </div>
+          <Events events={events} onJoinEvent={(id) => alert('Inscrito no evento!')} onCreateEvent={(data) => alert('Evento criado!')} />
+        </div>
+      )}
+
+      {/* ===================== OFFLINE DETECTOR ===================== */}
+      <OfflineDetector><></></OfflineDetector>
 
       {/* ===================== MODAL MATCH ===================== */}
       {matchModal && (
