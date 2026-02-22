@@ -365,7 +365,7 @@ const App: React.FC = () => {
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  // GPS - Solicitar localização
+  // GPS - Pegar localização automaticamente
   const requestLocation = () => {
     setLocationStatus('loading');
     if (navigator.geolocation) {
@@ -379,13 +379,41 @@ const App: React.FC = () => {
             currentUser: { ...prev.currentUser, coordinates: loc }
           }));
         },
-        () => setLocationStatus('denied'),
+        () => {
+          setLocationStatus('denied');
+          // Se negou, tenta de novo em 30 segundos
+          setTimeout(() => requestLocation(), 30000);
+        },
         { enableHighAccuracy: true }
       );
     } else {
       setLocationStatus('denied');
     }
   };
+
+  // Pegar localização automaticamente ao abrir o app
+  useEffect(() => {
+    requestLocation();
+    // Atualizar localização a cada 5 minutos
+    const interval = setInterval(() => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setUserLocation(loc);
+            setLocationStatus('granted');
+            setState(prev => ({
+              ...prev,
+              currentUser: { ...prev.currentUser, coordinates: loc }
+            }));
+          },
+          () => {},
+          { enableHighAccuracy: true }
+        );
+      }
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Cálculo de distância
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -743,13 +771,8 @@ const App: React.FC = () => {
                   <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full">{state.currentUser.denomination}</span>
                 </div>
 
-                {/* GPS Status */}
+                {/* GPS Status - pega automaticamente */}
                 <div className="w-full mt-6">
-                  {locationStatus === 'idle' && (
-                    <button onClick={requestLocation} className="w-full flex items-center justify-center gap-3 py-4 bg-blue-50 text-blue-600 font-bold rounded-2xl border border-blue-100 active:scale-95 transition-all">
-                      <Navigation2 size={18}/> Ativar Localização GPS
-                    </button>
-                  )}
                   {locationStatus === 'loading' && (
                     <div className="w-full flex items-center justify-center gap-3 py-4 bg-blue-50 text-blue-500 rounded-2xl border border-blue-100">
                       <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"/> Obtendo localização...
@@ -760,9 +783,9 @@ const App: React.FC = () => {
                       <MapPin size={18}/> Localização ativa
                     </div>
                   )}
-                  {locationStatus === 'denied' && (
-                    <div className="w-full flex items-center justify-center gap-3 py-4 bg-red-50 text-red-500 rounded-2xl border border-red-100 text-sm">
-                      <AlertTriangle size={18}/> Localização negada. Ative nas configurações.
+                  {(locationStatus === 'denied' || locationStatus === 'idle') && (
+                    <div className="w-full flex items-center justify-center gap-3 py-4 bg-amber-50 text-amber-600 rounded-2xl border border-amber-100 text-sm">
+                      <Navigation2 size={18}/> Obtendo localização...
                     </div>
                   )}
                 </div>
