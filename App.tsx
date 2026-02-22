@@ -405,7 +405,7 @@ const App: React.FC = () => {
         currentUser: { ...prev.currentUser, name: 'Admin', role: UserRole.ADMIN }
       }));
       setScreen('app');
-      setActiveTab('admin');
+      setActiveTab('swipe');
       return;
     }
     // Login normal
