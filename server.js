@@ -6,6 +6,7 @@ import fs from 'fs';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 
 // =====================================================
 // ===== GLOBAL ERROR HANDLING =====
@@ -67,14 +68,57 @@ console.log('Dir exists:', fs.existsSync(staticDir));
 // ===== MULTER CONFIG =====
 // =====================================================
 const multerStorage = multer.memoryStorage();
-const upload = multer({ storage: multerStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: multerStorage, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB para vídeos
 
+// =====================================================
+// ===== CLOUDFLARE R2 CONFIG =====
+// =====================================================
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || '023a0bad3f17632316cd10358db2201f';
+const R2_ACCESS_KEY = process.env.R2_ACCESS_KEY || 'c0fc2f1b386a132caffa98dc4abca76f';
+const R2_SECRET_KEY = process.env.R2_SECRET_KEY || 'bec5ae827717afa97a6cbb2580f3d4aad690f72f5cf1fed9a97a987d82095d29';
+const R2_BUCKET = process.env.R2_BUCKET || 'relacionamentos';
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-33e960c94b8741d0b56dc4c39cc23f47.r2.dev';
 
-// Pasta de uploads
-const uploadsBase = isInsideDist ? path.join(__dirname, '..') : __dirname;
-const uploadsDir = path.join(uploadsBase, 'uploads', 'photos');
-try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch(e) {}
-app.use('/uploads', express.static(path.join(uploadsBase, 'uploads')));
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: { accessKeyId: R2_ACCESS_KEY, secretAccessKey: R2_SECRET_KEY },
+});
+
+// Upload arquivo para R2 - organizado por pasta do usuário
+async function uploadToR2(file, userId, folder) {
+  const ext = path.extname(file.originalname) || '.jpg';
+  const key = `users/${userId}/${folder}/${Date.now()}${ext}`;
+  await s3.send(new PutObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  }));
+  return `${R2_PUBLIC_URL}/${key}`;
+}
+
+// Deletar arquivo do R2
+async function deleteFromR2(url) {
+  try {
+    const key = url.replace(R2_PUBLIC_URL + '/', '');
+    await s3.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+  } catch (e) { console.error('Erro ao deletar do R2:', e.message); }
+}
+
+// Deletar TODA a pasta de um usuário no R2
+async function deleteUserFolderR2(userId) {
+  try {
+    const prefix = `users/${userId}/`;
+    const listed = await s3.send(new ListObjectsV2Command({ Bucket: R2_BUCKET, Prefix: prefix }));
+    if (listed.Contents && listed.Contents.length > 0) {
+      for (const obj of listed.Contents) {
+        await s3.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: obj.Key }));
+      }
+    }
+    console.log(`Pasta R2 users/${userId}/ deletada (${listed.Contents?.length || 0} arquivos)`);
+  } catch (e) { console.error('Erro ao deletar pasta R2:', e.message); }
+}
 
 // Servir frontend estático
 app.use(express.static(staticDir));
@@ -251,9 +295,13 @@ app.put('/api/admin/users/:id/verify', async (req, res) => {
 
 app.delete('/api/admin/users/:id', async (req, res) => {
   try {
+    await deleteUserFolderR2(req.params.id);
+    await query('DELETE FROM photos WHERE user_id = ?', [req.params.id]);
+    await query('DELETE FROM stories WHERE user_id = ?', [req.params.id]);
+    await query('DELETE FROM reels WHERE user_id = ?', [req.params.id]);
     await query('DELETE FROM users WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Usuário excluído' });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+    res.json({ message: 'Usuário e todos os arquivos excluídos' });
+  } catch (err) { console.error('Erro deletar user:', err); res.status(500).json({ error: 'Erro interno' }); }
 });
 
 // =====================================================
@@ -811,13 +859,22 @@ app.delete('/api/notifications/:id', async (req, res) => {
 // =====================================================
 // ===== STORIES =====
 // =====================================================
-app.post('/api/stories', async (req, res) => {
+app.post('/api/stories', upload.single('media'), async (req, res) => {
   try {
-    const { userId, imageUrl, caption } = req.body;
+    const { userId, caption } = req.body;
+    let mediaUrl = req.body.imageUrl || '';
+    let mediaType = 'photo';
+    
+    if (req.file) {
+      mediaUrl = await uploadToR2(req.file, userId, 'stories');
+      mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'photo';
+    }
+    
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    const result = await query('INSERT INTO stories (user_id, image_url, caption, expires_at) VALUES (?,?,?,?)', [userId, imageUrl || '', caption, expiresAt]);
-    res.json({ success: true, id: result.insertId });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+    const result = await query('INSERT INTO stories (user_id, media_type, media_url, caption, expires_at) VALUES (?,?,?,?,?)', 
+      [userId, mediaType, mediaUrl, caption || null, expiresAt]);
+    res.json({ success: true, id: result.insertId, url: mediaUrl });
+  } catch (err) { console.error('Erro upload story:', err); res.status(500).json({ error: 'Erro ao enviar story' }); }
 });
 
 app.get('/api/stories', async (req, res) => {
@@ -867,18 +924,21 @@ app.get('/api/users/:id/photos', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
-app.post('/api/users/:id/photos', async (req, res) => {
+app.post('/api/users/:id/photos', upload.single('photo'), async (req, res) => {
   try {
-    const { url } = req.body;
+    if (!req.file) return res.status(400).json({ error: 'Nenhuma foto enviada' });
+    const url = await uploadToR2(req.file, req.params.id, 'photos');
     const existing = await query('SELECT COUNT(*) as c FROM photos WHERE user_id = ?', [req.params.id]);
     const isPrimary = existing[0].c === 0 ? 1 : 0;
     const result = await query('INSERT INTO photos (user_id, url, is_primary, sort_order) VALUES (?,?,?,?)', [req.params.id, url, isPrimary, existing[0].c]);
     res.status(201).json({ id: result.insertId, url, is_primary: isPrimary });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+  } catch (err) { console.error('Erro upload foto:', err); res.status(500).json({ error: 'Erro ao enviar foto' }); }
 });
 
 app.delete('/api/users/:id/photos/:photoId', async (req, res) => {
   try {
+    const [photo] = await query('SELECT url FROM photos WHERE id = ? AND user_id = ?', [req.params.photoId, req.params.id]);
+    if (photo && photo.url) await deleteFromR2(photo.url);
     await query('DELETE FROM photos WHERE id = ? AND user_id = ?', [req.params.photoId, req.params.id]);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
@@ -907,13 +967,23 @@ app.get('/api/reels', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
-app.post('/api/reels', async (req, res) => {
+app.post('/api/reels', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
   try {
-    const { userId, videoUrl, thumbnailUrl, description, category } = req.body;
+    const { userId, description, category } = req.body;
+    let videoUrl = req.body.videoUrl || '';
+    let thumbnailUrl = req.body.thumbnailUrl || '';
+    
+    if (req.files && req.files.video && req.files.video[0]) {
+      videoUrl = await uploadToR2(req.files.video[0], userId, 'reels');
+    }
+    if (req.files && req.files.thumbnail && req.files.thumbnail[0]) {
+      thumbnailUrl = await uploadToR2(req.files.thumbnail[0], userId, 'reels/thumbs');
+    }
+    
     const result = await query('INSERT INTO reels (user_id, video_url, thumbnail_url, description, category) VALUES (?,?,?,?,?)',
-      [userId, videoUrl, thumbnailUrl, description, category]);
-    res.status(201).json({ id: result.insertId });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+      [userId, videoUrl, thumbnailUrl, description || null, category || 'geral']);
+    res.status(201).json({ id: result.insertId, videoUrl, thumbnailUrl });
+  } catch (err) { console.error('Erro upload reel:', err); res.status(500).json({ error: 'Erro ao enviar reel' }); }
 });
 
 // =====================================================
@@ -1104,9 +1174,13 @@ app.post('/api/account/delete', async (req, res) => {
 
 app.delete('/api/account/permanent-delete/:userId', async (req, res) => {
   try {
+    await deleteUserFolderR2(req.params.userId);
+    await query('DELETE FROM photos WHERE user_id = ?', [req.params.userId]);
+    await query('DELETE FROM stories WHERE user_id = ?', [req.params.userId]);
+    await query('DELETE FROM reels WHERE user_id = ?', [req.params.userId]);
     await query('DELETE FROM users WHERE id = ?', [req.params.userId]);
-    res.json({ success: true, message: 'Conta excluída permanentemente.' });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+    res.json({ success: true, message: 'Conta e todos os arquivos excluídos permanentemente.' });
+  } catch (err) { console.error('Erro deletar conta:', err); res.status(500).json({ error: 'Erro interno' }); }
 });
 
 // =====================================================

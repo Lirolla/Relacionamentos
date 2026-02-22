@@ -1,30 +1,70 @@
 
-import React, { useState } from 'react';
-import { Camera, Plus, X, Trash2, Star, ChevronLeft, ChevronRight, ZoomIn, Move } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Camera, Plus, X, Trash2, Star, ChevronLeft, ChevronRight, ZoomIn, Move, Loader2 } from 'lucide-react';
 
 interface PhotoGalleryProps {
   photos: string[];
   onUpdatePhotos: (photos: string[]) => void;
   editable?: boolean;
   maxPhotos?: number;
+  userId?: number;
 }
 
-const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onUpdatePhotos, editable = false, maxPhotos = 9 }) => {
+const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onUpdatePhotos, editable = false, maxPhotos = 9, userId }) => {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayPhotos = photos;
 
-  const handleAddPhoto = () => {
-    // Simular adição de foto
-    const newPhotos = [...displayPhotos];
-    onUpdatePhotos(newPhotos.slice(0, maxPhotos));
+  const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    
+    setError('');
+    setUploading(true);
+    
+    try {
+      // Verificar NSFW primeiro
+      const checkForm = new FormData();
+      checkForm.append('image', file);
+      const checkRes = await fetch('/api/check-image', { method: 'POST', body: checkForm });
+      const checkData = await checkRes.json();
+      if (checkData.safe === false) {
+        setError('Conteúdo impróprio detectado. Envie outra foto.');
+        setUploading(false);
+        return;
+      }
+      
+      // Upload para R2
+      const formData = new FormData();
+      formData.append('photo', file);
+      const res = await fetch(`/api/users/${userId}/photos`, { method: 'POST', body: formData });
+      const data = await res.json();
+      
+      if (data.url) {
+        onUpdatePhotos([...displayPhotos, data.url]);
+      } else {
+        setError('Erro ao enviar foto');
+      }
+    } catch (err) {
+      setError('Erro ao enviar foto');
+    }
+    
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleRemovePhoto = (index: number) => {
-    const newPhotos = displayPhotos.filter((_, i) => i !== index);
-    onUpdatePhotos(newPhotos);
+  const handleRemovePhoto = async (index: number) => {
+    if (!userId) return;
+    try {
+      // TODO: chamar API para deletar do R2 quando tiver o photoId
+      const newPhotos = displayPhotos.filter((_, i) => i !== index);
+      onUpdatePhotos(newPhotos);
+    } catch (err) {}
   };
 
   const handleSetMain = (index: number) => {
@@ -48,6 +88,21 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onUpdatePhotos, edi
 
   return (
     <>
+      {/* Input hidden para upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAddPhoto}
+      />
+
+      {error && (
+        <div className="mb-2 p-3 bg-red-50 border border-red-200 text-red-600 text-xs font-medium rounded-xl">
+          {error}
+        </div>
+      )}
+
       {/* Grid de Fotos */}
       <div className="grid grid-cols-3 gap-1 rounded-2xl overflow-hidden">
         {displayPhotos.slice(0, maxPhotos).map((photo, index) => (
@@ -87,9 +142,6 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onUpdatePhotos, edi
                 <button onClick={(e) => { e.stopPropagation(); handleRemovePhoto(index); }} className="p-2 bg-red-500 text-white rounded-full" title="Remover">
                   <Trash2 size={14} />
                 </button>
-                <button className="p-2 bg-white/80 text-slate-700 rounded-full" title="Mover">
-                  <Move size={14} />
-                </button>
               </div>
             )}
 
@@ -103,11 +155,21 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onUpdatePhotos, edi
         {/* Botão adicionar foto */}
         {editable && displayPhotos.length < maxPhotos && (
           <button
-            onClick={handleAddPhoto}
-            className="h-32 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-amber-50 hover:border-amber-300 transition-all"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="h-32 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-amber-50 hover:border-amber-300 transition-all disabled:opacity-50"
           >
-            <Plus size={24} className="text-slate-400" />
-            <span className="text-[10px] text-slate-400 font-medium">Adicionar</span>
+            {uploading ? (
+              <>
+                <Loader2 size={24} className="text-amber-500 animate-spin" />
+                <span className="text-[10px] text-amber-500 font-medium">Enviando...</span>
+              </>
+            ) : (
+              <>
+                <Plus size={24} className="text-slate-400" />
+                <span className="text-[10px] text-slate-400 font-medium">Adicionar</span>
+              </>
+            )}
           </button>
         )}
       </div>

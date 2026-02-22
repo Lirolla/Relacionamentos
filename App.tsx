@@ -1031,7 +1031,7 @@ const App: React.FC = () => {
                 {/* Galeria de Fotos */}
                 <div className="w-full mt-6">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Image size={14}/> Minhas Fotos</h3>
-                  <PhotoGallery photos={userPhotos} onUpdatePhotos={setUserPhotos} editable={false} maxPhotos={9} />
+                  <PhotoGallery photos={userPhotos} onUpdatePhotos={setUserPhotos} editable={true} maxPhotos={9} userId={state.currentUser.id} />
                 </div>
 
                 {/* Estatísticas do Perfil */}
@@ -1125,6 +1125,13 @@ const App: React.FC = () => {
                     <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Sua História com Jesus</label>
                     <textarea rows={4} value={editForm.faithJourney} onChange={e => setEditForm({...editForm, faithJourney: e.target.value})} className="w-full bg-white border border-slate-100 rounded-[32px] px-6 py-5 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none shadow-sm" />
                   </div>
+
+                  {/* Upload de Fotos */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest flex items-center gap-2"><Camera size={12}/> Minhas Fotos</label>
+                    <PhotoGallery photos={userPhotos} onUpdatePhotos={setUserPhotos} editable={true} maxPhotos={9} userId={state.currentUser.id} />
+                  </div>
+
                   <button onClick={() => { setState(p => ({...p, currentUser: editForm})); setIsEditing(false); }} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-100 flex items-center justify-center gap-3 active:scale-95 transition-all">
                     <Save size={20} /> Salvar Perfil
                   </button>
