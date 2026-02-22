@@ -1292,6 +1292,69 @@ app.post('/api/messages/sticker', (req, res) => {
 });
 
 // =====================================================
+// ===== DELETE ACCOUNT =====
+// =====================================================
+app.post('/api/account/delete', (req, res) => {
+  const { userId, password } = req.body;
+  const user = users.find(u => u.id === userId);
+  
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+  }
+
+  // Marcar conta para exclusão (30 dias)
+  user.status = 'pending_deletion';
+  user.deletionScheduledAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  
+  console.log(`❌ Conta marcada para exclusão: ${user.name} (ID: ${user.id}) - Exclusão em 30 dias`);
+  
+  res.json({ 
+    success: true, 
+    message: 'Conta marcada para exclusão. Você tem 30 dias para cancelar fazendo login novamente.',
+    deletionDate: user.deletionScheduledAt
+  });
+});
+
+app.post('/api/account/cancel-deletion', (req, res) => {
+  const { userId } = req.body;
+  const user = users.find(u => u.id === userId);
+  
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+  }
+
+  if (user.status === 'pending_deletion') {
+    user.status = 'active';
+    delete user.deletionScheduledAt;
+    console.log(`✅ Exclusão cancelada: ${user.name} (ID: ${user.id})`);
+    res.json({ success: true, message: 'Exclusão de conta cancelada com sucesso!' });
+  } else {
+    res.json({ success: false, message: 'Esta conta não está marcada para exclusão.' });
+  }
+});
+
+app.delete('/api/account/permanent-delete/:userId', (req, res) => {
+  const userId = req.params.userId;
+  const userIndex = users.findIndex(u => u.id === userId);
+  
+  if (userIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+  }
+
+  const user = users[userIndex];
+  
+  // Excluir permanentemente
+  users.splice(userIndex, 1);
+  
+  console.log(`🗑️ Conta permanentemente excluída: ${user.name} (ID: ${user.id})`);
+  
+  res.json({ 
+    success: true, 
+    message: 'Conta excluída permanentemente. Todos os dados foram removidos.'
+  });
+});
+
+// =====================================================
 // ===== HEALTH CHECK =====
 // =====================================================
 app.get('/api/health', (req, res) => {

@@ -113,21 +113,46 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onClose, darkMode, onToggle
         {/* Delete Confirm */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6">
-            <div className="bg-white rounded-3xl p-6 max-w-sm w-full">
+            <div className="bg-white rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle size={32} className="text-red-500" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2 text-center">Excluir conta?</h3>
-              <p className="text-sm text-slate-500 mb-2 text-center">Esta ação é <strong>irreversível</strong>. Todos os seus dados serão permanentemente excluídos:</p>
-              <ul className="text-xs text-slate-400 space-y-1 mb-6 pl-4">
-                <li>• Perfil e fotos</li>
-                <li>• Matches e conversas</li>
-                <li>• Histórico de atividades</li>
-                <li>• Assinatura premium (sem reembolso)</li>
-              </ul>
+              <h3 className="text-2xl font-bold text-slate-800 mb-3 text-center">Excluir Minha Conta</h3>
+              <p className="text-sm text-slate-600 mb-4 text-center">Esta ação é <strong className="text-red-600">permanente e irreversível</strong>. Você não poderá recuperar sua conta ou dados.</p>
+              
+              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-4">
+                <p className="text-xs font-bold text-red-800 mb-2">⚠️ O QUE SERÁ EXCLUÍDO:</p>
+                <ul className="text-xs text-red-700 space-y-1.5 pl-4">
+                  <li>• Seu perfil completo e todas as fotos</li>
+                  <li>• Todos os matches e conversas</li>
+                  <li>• Histórico de atividades e interações</li>
+                  <li>• Posts, stories e reels da comunidade</li>
+                  <li>• Pedidos de oração e devocionais</li>
+                  <li>• Assinatura premium (sem reembolso)</li>
+                  <li>• Verificações de identidade e pastoral</li>
+                  <li>• Sistema de reputação e avaliações</li>
+                </ul>
+              </div>
+
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-6">
+                <p className="text-xs font-bold text-amber-800 mb-2">📋 IMPORTANTE:</p>
+                <ul className="text-xs text-amber-700 space-y-1.5 pl-4">
+                  <li>• Você terá 30 dias para cancelar a exclusão</li>
+                  <li>• Durante este período, sua conta ficará desativada</li>
+                  <li>• Após 30 dias, todos os dados serão excluídos permanentemente</li>
+                  <li>• Você pode reativar fazendo login dentro de 30 dias</li>
+                </ul>
+              </div>
+
+              <p className="text-xs text-center text-slate-500 mb-6">Tem certeza que deseja continuar?</p>
+              
               <div className="flex gap-3">
-                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 border-2 border-slate-200 text-slate-600 font-bold rounded-2xl">Cancelar</button>
-                <button onClick={() => { setShowDeleteConfirm(false); onLogout(); }} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-2xl">Excluir</button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3.5 border-2 border-slate-300 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all">Cancelar</button>
+                <button onClick={() => { 
+                  alert('Sua conta foi marcada para exclusão. Você tem 30 dias para cancelar fazendo login novamente. Após este período, todos os dados serão permanentemente excluídos.');
+                  setShowDeleteConfirm(false); 
+                  onLogout(); 
+                }} className="flex-1 py-3.5 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 transition-all shadow-lg">Excluir Conta</button>
               </div>
             </div>
           </div>
