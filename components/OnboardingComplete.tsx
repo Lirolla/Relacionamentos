@@ -29,7 +29,7 @@ interface OnboardingData {
 const DENOMINATIONS = [
   'Batista', 'Presbiteriana', 'Assembleia de Deus', 'Metodista', 'Católica',
   'Adventista', 'Luterana', 'Anglicana', 'Congregacional', 'Quadrangular',
-  'Universal', 'Sara Nossa Terra', 'Bola de Neve', 'Lagoinha', 'Outra'
+  'Universal', 'Sara Nossa Terra', 'Bola de Neve', 'Congregação Cristã do Brasil', 'Lagoinha', 'Outra'
 ];
 
 const WORSHIP_STYLES = [

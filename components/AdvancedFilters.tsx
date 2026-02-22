@@ -35,7 +35,7 @@ const DEFAULT_FILTERS: FilterValues = {
 
 const DENOMINATIONS = [
   'Assembleia de Deus', 'Batista', 'Presbiteriana', 'Metodista', 'Católica',
-  'Adventista', 'Luterana', 'Congregação Cristã', 'Universal', 'Sara Nossa Terra',
+  'Adventista', 'Luterana', 'Congregação Cristã do Brasil', 'Universal', 'Sara Nossa Terra',
   'Bola de Neve', 'Lagoinha', 'Renascer', 'Internacional da Graça', 'Outra'
 ];
 

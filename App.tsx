@@ -208,6 +208,7 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
                   <option>Universal</option>
                   <option>Sara Nossa Terra</option>
                   <option>Bola de Neve</option>
+                  <option>Congregação Cristã do Brasil</option>
                   <option>Outra</option>
                 </select>
               </div>

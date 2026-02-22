@@ -777,7 +777,7 @@ const AdminPanel: React.FC = () => {
                       <option>Batista</option><option>Assembleia de Deus</option><option>Presbiteriana</option>
                       <option>Metodista</option><option>Quadrangular</option><option>Adventista</option>
                       <option>Católica</option><option>Universal</option><option>Sara Nossa Terra</option>
-                      <option>Bola de Neve</option><option>Maranata</option><option>Outra</option>
+                      <option>Bola de Neve</option><option>Congregação Cristã do Brasil</option><option>Maranata</option><option>Outra</option>
                     </select>
                   </div>
                   <div>
