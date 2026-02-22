@@ -32,6 +32,11 @@ import SplashScreen from './components/SplashScreen';
 import BlockReport from './components/BlockReport';
 import ShareProfile from './components/ShareProfile';
 import SettingsPage from './components/SettingsPage';
+import StoriesCamera from './components/StoriesCamera';
+import ProfileDetail from './components/ProfileDetail';
+import { MessageBubble, TypingIndicator, ChatInputBar, EnhancedMessage } from './components/EnhancedChat';
+import OnboardingComplete from './components/OnboardingComplete';
+import InviteSystem, { WaitingApproval } from './components/InviteSystem';
 import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award, Video, Moon, Sun, Mic, Share2, Film, Image } from 'lucide-react';
 
 // ===================== TELA DE ENTRADA =====================
@@ -350,6 +355,15 @@ const App: React.FC = () => {
   const [showSettingsPage, setShowSettingsPage] = useState(false);
   const [userPhotos, setUserPhotos] = useState<string[]>([]);
 
+  // Funcionalidades v6
+  const [showStoriesCamera, setShowStoriesCamera] = useState(false);
+  const [showProfileDetail, setShowProfileDetail] = useState(false);
+  const [profileDetailTarget, setProfileDetailTarget] = useState<any>(null);
+  const [showInviteSystem, setShowInviteSystem] = useState(false);
+  const [showOnboardingComplete, setShowOnboardingComplete] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [chatMessages, setChatMessages] = useState<EnhancedMessage[]>([]);
+
   // Persistir dark mode
   useEffect(() => {
     localStorage.setItem('darkMode', darkMode.toString());
@@ -496,7 +510,7 @@ const App: React.FC = () => {
         {activeTab === 'swipe' && (
           <div className="h-full flex flex-col items-center p-4">
             {/* Stories */}
-            <Stories stories={stories} currentUserId={state.currentUser.id} onPostStory={(file) => console.log('post story', file)} onViewStory={(id) => console.log('view story', id)} />
+            <Stories stories={stories} currentUserId={state.currentUser.id} onPostStory={() => setShowStoriesCamera(true)} onViewStory={(id) => console.log('view story', id)} />
 
             {currentProfile ? (
               <div className="relative w-full max-w-sm">
@@ -520,6 +534,13 @@ const App: React.FC = () => {
                   className="absolute top-16 left-4 p-3 rounded-full bg-white/20 backdrop-blur-xl text-white/70 hover:text-blue-400 transition-all z-10 border border-white/20"
                 >
                   <Share2 size={18} />
+                </button>
+                {/* Botão Ver Perfil Detalhado */}
+                <button 
+                  onClick={() => { setProfileDetailTarget(currentProfile); setShowProfileDetail(true); }}
+                  className="absolute bottom-32 left-1/2 -translate-x-1/2 px-6 py-2 bg-white/20 backdrop-blur-xl text-white rounded-full text-xs font-bold border border-white/30 z-10 active:scale-95 transition-all"
+                >
+                  Ver Perfil Completo
                 </button>
                 {/* Badge mesma igreja */}
                 {currentProfile.churchName === state.currentUser.churchName && (
@@ -812,6 +833,12 @@ const App: React.FC = () => {
                   </button>
                   <button onClick={() => setShowChurchMap(true)} className="flex items-center justify-center gap-2 py-4 bg-teal-50 text-teal-600 font-bold rounded-2xl border border-teal-100 active:scale-95 transition-all text-sm">
                     <MapPin size={16}/> Mapa Cristão
+                  </button>
+                  <button onClick={() => setShowInviteSystem(true)} className="flex items-center justify-center gap-2 py-4 bg-amber-50 text-amber-600 font-bold rounded-2xl border border-amber-100 active:scale-95 transition-all text-sm">
+                    <Users size={16}/> Convidar
+                  </button>
+                  <button onClick={() => setShowVideoVerification(true)} className="flex items-center justify-center gap-2 py-4 bg-green-50 text-green-600 font-bold rounded-2xl border border-green-100 active:scale-95 transition-all text-sm">
+                    <Video size={16}/> Verificar
                   </button>
                 </div>
 
@@ -1249,6 +1276,38 @@ const App: React.FC = () => {
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
           onLogout={() => { setScreen('welcome'); setShowSettingsPage(false); }}
+        />
+      )}
+
+      {/* ===================== STORIES CAMERA ===================== */}
+      {showStoriesCamera && (
+        <StoriesCamera
+          onClose={() => setShowStoriesCamera(false)}
+          onPost={(storyData) => { console.log('Story posted:', storyData); setShowStoriesCamera(false); }}
+        />
+      )}
+
+      {/* ===================== PERFIL DETALHADO ===================== */}
+      {showProfileDetail && profileDetailTarget && (
+        <ProfileDetail
+          profile={profileDetailTarget}
+          onClose={() => { setShowProfileDetail(false); setProfileDetailTarget(null); }}
+          onLike={(id) => { handleSwipeRight(id); setShowProfileDetail(false); setProfileDetailTarget(null); }}
+          onSuperLike={(id) => { handleSwipeRight(id); setShowProfileDetail(false); setProfileDetailTarget(null); }}
+          onMessage={(id) => { setActiveTab('chat'); setShowProfileDetail(false); setProfileDetailTarget(null); }}
+          isFavorite={state.favorites.includes(profileDetailTarget.id)}
+          onToggleFavorite={(id) => setState(prev => ({ ...prev, favorites: prev.favorites.includes(id) ? prev.favorites.filter(fid => fid !== id) : [...prev.favorites, id] }))}
+        />
+      )}
+
+      {/* ===================== SISTEMA DE CONVITES ===================== */}
+      {showInviteSystem && (
+        <InviteSystem
+          onClose={() => setShowInviteSystem(false)}
+          userName={state.currentUser.name}
+          inviteCode="DIVINA2026"
+          invitesSent={12}
+          invitesAccepted={8}
         />
       )}
 

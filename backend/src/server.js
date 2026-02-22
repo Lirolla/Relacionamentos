@@ -1146,10 +1146,156 @@ app.delete('/api/users/:id/account', (req, res) => {
 });
 
 // =====================================================
+// ===== SISTEMA DE CONVITES (ESTILO ORKUT) =====
+// =====================================================
+let invites = [
+  { id: 'inv1', code: 'DIVINA2026', createdBy: '1', usedBy: '2', createdAt: '2026-01-15', status: 'used' },
+  { id: 'inv2', code: 'SARAH123', createdBy: '2', usedBy: null, createdAt: '2026-02-01', status: 'pending' },
+];
+
+let waitingList = [
+  { id: 'wl1', name: 'Lucas Ferreira', email: 'lucas@email.com', reason: 'Membro da Igreja Batista Central', requestDate: '2026-02-20', status: 'pending' },
+  { id: 'wl2', name: 'Camila Souza', email: 'camila@email.com', reason: 'Sou da Assembleia de Deus', requestDate: '2026-02-19', status: 'pending' },
+];
+
+// Gerar código de convite
+app.post('/api/invites/generate', (req, res) => {
+  const { userId } = req.body;
+  const code = `CD${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const invite = { id: `inv-${Date.now()}`, code, createdBy: userId, usedBy: null, createdAt: new Date().toISOString(), status: 'pending' };
+  invites.push(invite);
+  res.json({ success: true, invite });
+});
+
+// Usar código de convite
+app.post('/api/invites/use', (req, res) => {
+  const { code, userId } = req.body;
+  const invite = invites.find(i => i.code === code && i.status === 'pending');
+  if (!invite) return res.status(404).json({ error: 'Código inválido ou já utilizado' });
+  invite.usedBy = userId;
+  invite.status = 'used';
+  res.json({ success: true, message: 'Convite aceito! Acesso liberado automaticamente.', invite });
+});
+
+// Listar convites do usuário
+app.get('/api/invites/user/:userId', (req, res) => {
+  const userInvites = invites.filter(i => i.createdBy === req.params.userId);
+  res.json({ invites: userInvites, sent: userInvites.length, accepted: userInvites.filter(i => i.status === 'used').length });
+});
+
+// Verificar se código é válido
+app.get('/api/invites/verify/:code', (req, res) => {
+  const invite = invites.find(i => i.code === req.params.code && i.status === 'pending');
+  res.json({ valid: !!invite, invite: invite || null });
+});
+
+// Entrar na fila de espera (sem convite)
+app.post('/api/waiting-list', (req, res) => {
+  const { name, email, reason } = req.body;
+  const entry = { id: `wl-${Date.now()}`, name, email, reason, requestDate: new Date().toISOString(), status: 'pending' };
+  waitingList.push(entry);
+  res.json({ success: true, entry, message: 'Você entrou na fila de espera. Aguarde aprovação.' });
+});
+
+// Admin: Listar fila de espera
+app.get('/api/admin/waiting-list', (req, res) => {
+  res.json({ waitingList, total: waitingList.length, pending: waitingList.filter(w => w.status === 'pending').length });
+});
+
+// Admin: Aprovar da fila
+app.put('/api/admin/waiting-list/:id/approve', (req, res) => {
+  const entry = waitingList.find(w => w.id === req.params.id);
+  if (!entry) return res.status(404).json({ error: 'Não encontrado' });
+  entry.status = 'approved';
+  res.json({ success: true, entry });
+});
+
+// Admin: Rejeitar da fila
+app.put('/api/admin/waiting-list/:id/reject', (req, res) => {
+  const entry = waitingList.find(w => w.id === req.params.id);
+  if (!entry) return res.status(404).json({ error: 'Não encontrado' });
+  entry.status = 'rejected';
+  res.json({ success: true, entry });
+});
+
+// =====================================================
+// ===== STORIES CAMERA =====
+// =====================================================
+let userStories = [];
+
+app.post('/api/stories', (req, res) => {
+  const { userId, type, content, filter, stickers, caption } = req.body;
+  const story = { id: `story-${Date.now()}`, userId, type, content, filter, stickers, caption, createdAt: new Date().toISOString(), views: [], likes: [] };
+  userStories.push(story);
+  res.json({ success: true, story });
+});
+
+app.get('/api/stories', (req, res) => {
+  const activeStories = userStories.filter(s => {
+    const created = new Date(s.createdAt);
+    const now = new Date();
+    return (now.getTime() - created.getTime()) < 24 * 60 * 60 * 1000;
+  });
+  res.json({ stories: activeStories });
+});
+
+app.post('/api/stories/:id/view', (req, res) => {
+  const story = userStories.find(s => s.id === req.params.id);
+  if (story && !story.views.includes(req.body.userId)) story.views.push(req.body.userId);
+  res.json({ success: true });
+});
+
+// =====================================================
+// ===== ONBOARDING COMPLETO =====
+// =====================================================
+app.post('/api/onboarding/complete', (req, res) => {
+  const { userId, photos, name, age, gender, city, state, denomination, churchName, baptized, churchRole, bio, faithJourney, favoriteVerse, worshipStyle, relationshipGoal, interests, height } = req.body;
+  const user = users.find(u => u.id === userId);
+  if (user) {
+    Object.assign(user, { name, age, gender, city, location: `${city}, ${state}`, denomination, churchName, baptized, churchRole, bio, faithJourney, favoriteVerse, worshipStyle, relationshipGoal, interests, height, onboardingComplete: true });
+    if (photos?.length) userPhotos[userId] = photos;
+  }
+  res.json({ success: true, user });
+});
+
+// =====================================================
+// ===== ENHANCED CHAT (REACTIONS, TYPING) =====
+// =====================================================
+let messageReactions = {};
+let typingStatus = {};
+
+app.post('/api/messages/:messageId/react', (req, res) => {
+  const { emoji, userId } = req.body;
+  if (!messageReactions[req.params.messageId]) messageReactions[req.params.messageId] = [];
+  messageReactions[req.params.messageId] = messageReactions[req.params.messageId].filter(r => r.userId !== userId);
+  messageReactions[req.params.messageId].push({ emoji, userId, timestamp: Date.now() });
+  res.json({ success: true });
+});
+
+app.post('/api/chat/:matchId/typing', (req, res) => {
+  const { userId, isTyping } = req.body;
+  typingStatus[`${req.params.matchId}_${userId}`] = { isTyping, timestamp: Date.now() };
+  res.json({ success: true });
+});
+
+app.get('/api/chat/:matchId/typing/:userId', (req, res) => {
+  const key = `${req.params.matchId}_${req.params.userId}`;
+  const status = typingStatus[key];
+  const isActive = status && status.isTyping && (Date.now() - status.timestamp) < 5000;
+  res.json({ isTyping: isActive });
+});
+
+app.post('/api/messages/sticker', (req, res) => {
+  const { matchId, senderId, stickerText, stickerBg } = req.body;
+  const msg = { id: `msg-${Date.now()}`, matchId, senderId, type: 'sticker', stickerText, stickerBg, timestamp: Date.now(), status: 'sent' };
+  res.json({ success: true, message: msg });
+});
+
+// =====================================================
 // ===== HEALTH CHECK =====
 // =====================================================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now(), version: '5.0.0' });
+  res.json({ status: 'ok', timestamp: Date.now(), version: '6.0.0' });
 });
 
 // =====================================================
@@ -1157,7 +1303,7 @@ app.get('/api/health', (req, res) => {
 // =====================================================
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Conexão Divina API v5.0 rodando na porta ${PORT}`);
+  console.log(`🚀 Conexão Divina API v6.0 rodando na porta ${PORT}`);
   console.log(`📊 ${users.length} usuários | ${churches.length} igrejas | ${events.length} eventos`);
-  console.log(`🆕 Reels | Voice Messages | Photo Gallery | Advanced Filters | Block/Report | Share | Settings`);
+  console.log(`🆕 v6: Invites (Orkut) | Stories Camera | Profile Detail | Enhanced Chat | Onboarding`);
 });
