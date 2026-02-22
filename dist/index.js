@@ -7,6 +7,16 @@ import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
 // =====================================================
+// ===== GLOBAL ERROR HANDLING =====
+// =====================================================
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message, err.stack);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err);
+});
+
+// =====================================================
 // ===== CONEXÃO MYSQL - HOSTINGER =====
 // =====================================================
 const dbConfig = {
@@ -15,29 +25,29 @@ const dbConfig = {
   password: process.env.DB_PASSWORD || 'Pagotto24',
   database: process.env.DB_NAME || 'u219024948_cristo',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 5,
   queueLimit: 0,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  connectTimeout: 10000
 };
 
-let pool;
+let pool = null;
 try {
   pool = mysql.createPool(dbConfig);
-  console.log('✅ Pool de conexão MySQL criado com sucesso');
+  console.log('Pool MySQL criado');
 } catch (err) {
-  console.error('❌ Erro ao criar pool MySQL:', err.message);
+  console.error('Erro pool MySQL:', err.message);
 }
 
 async function query(sql, params) {
-  try {
-    const [rows] = await pool.execute(sql, params);
-    return rows;
-  } catch (err) {
-    console.error('❌ Erro na query:', sql, err.message);
-    throw err;
-  }
+  if (!pool) throw new Error('Database not available');
+  const [rows] = await pool.execute(sql, params);
+  return rows;
 }
 
+// =====================================================
+// ===== EXPRESS SETUP =====
+// =====================================================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -49,16 +59,29 @@ app.use(express.json({ limit: '10mb' }));
 const isInsideDist = __dirname.endsWith('dist') || __dirname.endsWith('dist/');
 const staticDir = isInsideDist ? __dirname : path.join(__dirname, 'dist');
 
-// Pasta de uploads persistente (FORA do dist)
+console.log('Static dir:', staticDir);
+console.log('Dir exists:', fs.existsSync(staticDir));
+
+// Pasta de uploads
 const uploadsBase = isInsideDist ? path.join(__dirname, '..') : __dirname;
 const uploadsDir = path.join(uploadsBase, 'uploads', 'photos');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch(e) {}
 app.use('/uploads', express.static(path.join(uploadsBase, 'uploads')));
 
 // Servir frontend estático
 app.use(express.static(staticDir));
+
+// =====================================================
+// ===== HEALTH CHECK (FIRST - for debugging) =====
+// =====================================================
+app.get('/api/health', async (req, res) => {
+  let dbOk = false;
+  try {
+    await query('SELECT 1', []);
+    dbOk = true;
+  } catch (e) {}
+  res.json({ status: 'ok', database: dbOk ? 'connected' : 'disconnected', timestamp: Date.now(), version: '8.1.0', staticDir, nodeVersion: process.version });
+});
 
 // =====================================================
 // ===== ADMIN LOGIN =====
@@ -96,22 +119,12 @@ app.get('/api/admin/stats', async (req, res) => {
     const [pendingVerifications] = await query('SELECT COUNT(*) as c FROM verifications WHERE status = ?', ['pending']);
     const [activeSubs] = await query('SELECT COUNT(*) as c FROM subscriptions WHERE status = ?', ['active']);
     const [revenue] = await query('SELECT COALESCE(SUM(price), 0) as total FROM subscriptions WHERE status = ?', ['active']);
-
     res.json({
-      totalUsers: totalUsers.c,
-      activeUsers: activeUsers.c,
-      premiumUsers: premiumUsers.c,
-      verifiedUsers: verifiedUsers.c,
-      totalChurches: totalChurches.c,
-      verifiedChurches: verifiedChurches.c,
-      totalEvents: totalEvents.c,
-      activeEvents: activeEvents.c,
-      totalMatches: totalMatches.c,
-      pendingReports: pendingReports.c,
-      pendingVerifications: pendingVerifications.c,
-      totalSubscriptions: activeSubs.c,
-      activeSubscriptions: activeSubs.c,
-      monthlyRevenue: revenue.total,
+      totalUsers: totalUsers.c, activeUsers: activeUsers.c, premiumUsers: premiumUsers.c,
+      verifiedUsers: verifiedUsers.c, totalChurches: totalChurches.c, verifiedChurches: verifiedChurches.c,
+      totalEvents: totalEvents.c, activeEvents: activeEvents.c, totalMatches: totalMatches.c,
+      pendingReports: pendingReports.c, pendingVerifications: pendingVerifications.c,
+      totalSubscriptions: activeSubs.c, activeSubscriptions: activeSubs.c, monthlyRevenue: revenue.total,
     });
   } catch (err) {
     console.error('Erro stats:', err.message);
@@ -280,7 +293,7 @@ app.delete('/api/admin/events/:id', async (req, res) => {
 });
 
 // =====================================================
-// ===== ADMIN REPORTS (DENÚNCIAS) =====
+// ===== ADMIN REPORTS =====
 // =====================================================
 app.get('/api/admin/reports', async (req, res) => {
   try {
@@ -297,7 +310,7 @@ app.put('/api/admin/reports/:id/resolve', async (req, res) => {
       const rows = await query('SELECT reported_user_id FROM reports WHERE id = ?', [req.params.id]);
       if (rows.length > 0) await query('UPDATE users SET is_blocked = 1, is_active = 0 WHERE id = ?', [rows[0].reported_user_id]);
     }
-    res.json({ message: `Denúncia resolvida (${action})` });
+    res.json({ message: 'Denúncia resolvida' });
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
@@ -357,15 +370,12 @@ app.get('/api/admin/matches', async (req, res) => {
 });
 
 // =====================================================
-// ===== MODERATION (DENÚNCIA DO USUÁRIO) =====
+// ===== MODERATION =====
 // =====================================================
 app.post('/api/moderation/report', async (req, res) => {
   try {
     const { reporter_id, reported_user_id, reason, description } = req.body;
-    const result = await query(
-      'INSERT INTO reports (reporter_id, reported_user_id, reason, description) VALUES (?,?,?,?)',
-      [reporter_id, reported_user_id, reason, description]
-    );
+    const result = await query('INSERT INTO reports (reporter_id, reported_user_id, reason, description) VALUES (?,?,?,?)', [reporter_id, reported_user_id, reason, description]);
     res.json({ message: 'Denúncia registrada', id: result.insertId });
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
@@ -528,7 +538,7 @@ app.get('/api/events/nearby', async (req, res) => {
 });
 
 // =====================================================
-// ===== VERIFICATION (USUÁRIO) =====
+// ===== VERIFICATION =====
 // =====================================================
 app.post('/api/verification/submit', async (req, res) => {
   try {
@@ -547,10 +557,7 @@ app.get('/api/community/posts', async (req, res) => {
     const { category } = req.query;
     let sql = 'SELECT p.*, u.name as userName, u.verification_status FROM community_posts p LEFT JOIN users u ON p.user_id = u.id';
     const params = [];
-    if (category && category !== 'todos' && category !== 'all') {
-      sql += ' WHERE p.category = ?';
-      params.push(category);
-    }
+    if (category && category !== 'todos' && category !== 'all') { sql += ' WHERE p.category = ?'; params.push(category); }
     sql += ' ORDER BY p.created_at DESC LIMIT 50';
     const rows = await query(sql, params);
     res.json(rows);
@@ -597,10 +604,7 @@ app.get('/api/prayers', async (req, res) => {
     const { category } = req.query;
     let sql = 'SELECT p.*, u.name as userName FROM prayer_requests p LEFT JOIN users u ON p.user_id = u.id';
     const params = [];
-    if (category && category !== 'todos' && category !== 'all') {
-      sql += ' WHERE p.category = ?';
-      params.push(category);
-    }
+    if (category && category !== 'todos' && category !== 'all') { sql += ' WHERE p.category = ?'; params.push(category); }
     sql += ' ORDER BY p.created_at DESC LIMIT 50';
     const rows = await query(sql, params);
     res.json(rows);
@@ -743,7 +747,6 @@ app.post('/api/swipes', async (req, res) => {
   try {
     const { swiperId, swipedId, direction } = req.body;
     await query('INSERT INTO swipes (swiper_id, swiped_id, direction) VALUES (?,?,?) ON DUPLICATE KEY UPDATE direction = ?', [swiperId, swipedId, direction, direction]);
-    // Check for mutual like = match
     if (direction === 'like' || direction === 'superlike') {
       const mutual = await query('SELECT id FROM swipes WHERE swiper_id = ? AND swiped_id = ? AND direction IN (?,?)', [swipedId, swiperId, 'like', 'superlike']);
       if (mutual.length > 0) {
@@ -894,7 +897,7 @@ app.put('/api/users/:id/settings', async (req, res) => {
 });
 
 // =====================================================
-// ===== INVITES (SISTEMA DE CONVITES) =====
+// ===== INVITES =====
 // =====================================================
 app.post('/api/invites/generate', async (req, res) => {
   try {
@@ -1018,7 +1021,8 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 app.post('/api/payments/create-checkout', async (req, res) => {
   if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe não configurado' });
   try {
-    const stripe = (await import('stripe')).default(STRIPE_SECRET_KEY);
+    const { default: Stripe } = await import('stripe');
+    const stripe = Stripe(STRIPE_SECRET_KEY);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
@@ -1046,29 +1050,22 @@ app.post('/api/users/:id/share', (req, res) => {
 });
 
 // =====================================================
-// ===== HEALTH CHECK =====
-// =====================================================
-app.get('/api/health', async (req, res) => {
-  let dbOk = false;
-  try {
-    await query('SELECT 1', []);
-    dbOk = true;
-  } catch (e) {}
-  res.json({ status: 'ok', database: dbOk ? 'connected' : 'disconnected', timestamp: Date.now(), version: '8.0.0' });
-});
-
-// =====================================================
 // ===== SPA FALLBACK =====
 // =====================================================
 app.get('*', (req, res) => {
-  res.sendFile(path.join(staticDir, 'index.html'));
+  const indexPath = path.join(staticDir, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Frontend not found', staticDir, indexPath });
+  }
 });
 
 // =====================================================
 // ===== START SERVER =====
 // =====================================================
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Conexão Divina API v8.0 rodando na porta ${PORT}`);
-  console.log(`📊 Backend MySQL + Frontend estático`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Static: ${staticDir}`);
 });
