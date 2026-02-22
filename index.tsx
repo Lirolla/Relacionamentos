@@ -6,6 +6,9 @@ import AdminPanel from './pages/AdminPanel';
 import LandingPage from './pages/LandingPage';
 import PremiumPage from './pages/PremiumPage';
 import SuccessPage from './pages/SuccessPage';
+import TermosDeUso from './pages/TermosDeUso';
+import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
+import Tutorial from './pages/Tutorial';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -22,6 +25,9 @@ root.render(
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/premium" element={<PremiumPage />} />
         <Route path="/success" element={<SuccessPage />} />
+        <Route path="/termos" element={<TermosDeUso />} />
+        <Route path="/privacidade" element={<PoliticaPrivacidade />} />
+        <Route path="/tutorial" element={<Tutorial />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
