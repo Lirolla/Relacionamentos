@@ -14,20 +14,11 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onUpdatePhotos, edi
   const [viewerIndex, setViewerIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
 
-  const SAMPLE_PHOTOS = [
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400',
-    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400',
-    'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-  ];
-
-  const displayPhotos = photos.length > 0 ? photos : SAMPLE_PHOTOS;
+  const displayPhotos = photos;
 
   const handleAddPhoto = () => {
     // Simular adição de foto
-    const newPhotos = [...displayPhotos, SAMPLE_PHOTOS[Math.floor(Math.random() * SAMPLE_PHOTOS.length)]];
+    const newPhotos = [...displayPhotos];
     onUpdatePhotos(newPhotos.slice(0, maxPhotos));
   };
 

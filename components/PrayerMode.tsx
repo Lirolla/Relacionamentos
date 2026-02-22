@@ -33,51 +33,7 @@ interface PrayerModeProps {
   currentUserPhoto: string;
 }
 
-const SAMPLE_PRAYERS: PrayerRequest[] = [
-  {
-    id: 'pr1', userId: 'p1', userName: 'Maria Santos',
-    userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    title: 'Cura para minha mãe',
-    description: 'Minha mãe está internada e precisa de uma cirurgia delicada. Peço orações para que Deus guie as mãos dos médicos e traga cura completa.',
-    category: 'saude', prayerCount: 34, hasPrayed: false, isAnonymous: false,
-    responses: [
-      { id: 'r1', userId: 'p2', userName: 'Ana Costa', userPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50', text: 'Orando pela sua mãe, Maria! Deus é o médico dos médicos. Fique firme! 🙏', createdAt: '2h' },
-      { id: 'r2', userId: 'p4', userName: 'Lucas Ferreira', userPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50', text: 'Estou intercedendo! "Pela suas feridas fomos sarados." Isaías 53:5', createdAt: '1h' },
-    ],
-    createdAt: '4h', isUrgent: true
-  },
-  {
-    id: 'pr2', userId: 'p4', userName: 'Lucas Ferreira',
-    userPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-    title: 'Direção profissional',
-    description: 'Estou em um momento de transição na carreira. Preciso de sabedoria divina para tomar a decisão certa. Orem para que Deus abra as portas certas.',
-    category: 'trabalho', prayerCount: 18, hasPrayed: true, isAnonymous: false,
-    responses: [
-      { id: 'r3', userId: 'p1', userName: 'Maria Santos', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50', text: 'Deus tem o melhor para você, Lucas! Confia Nele! Provérbios 3:5-6 🙌', createdAt: '3h' },
-    ],
-    createdAt: '8h', isUrgent: false
-  },
-  {
-    id: 'pr3', userId: 'anonymous', userName: 'Anônimo',
-    userPhoto: '',
-    title: 'Restauração familiar',
-    description: 'Estou passando por um momento muito difícil na minha família. Peço orações por restauração e paz no meu lar.',
-    category: 'familia', prayerCount: 52, hasPrayed: false, isAnonymous: true,
-    responses: [
-      { id: 'r4', userId: 'p5', userName: 'Rebeca Lima', userPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=50', text: 'Deus é especialista em restaurar o que parece impossível! Estou orando! ❤️', createdAt: '1h' },
-    ],
-    createdAt: '12h', isUrgent: false
-  },
-  {
-    id: 'pr4', userId: 'p5', userName: 'Rebeca Lima',
-    userPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-    title: 'Futuro relacionamento',
-    description: 'Orem para que Deus prepare meu coração e traga a pessoa certa no tempo Dele. Quero um relacionamento que glorifique a Deus.',
-    category: 'relacionamento', prayerCount: 67, hasPrayed: false, isAnonymous: false,
-    responses: [],
-    createdAt: '1d', isUrgent: false
-  },
-];
+const SAMPLE_PRAYERS: PrayerRequest[] = [];
 
 const CATEGORIES = [
   { key: 'todos', label: 'Todos', emoji: '🙏' },
@@ -90,7 +46,7 @@ const CATEGORIES = [
 ];
 
 const PrayerMode: React.FC<PrayerModeProps> = ({ currentUserId, currentUserName, currentUserPhoto }) => {
-  const [prayers, setPrayers] = useState<PrayerRequest[]>(SAMPLE_PRAYERS);
+  const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [showNewPrayer, setShowNewPrayer] = useState(false);
   const [expandedPrayer, setExpandedPrayer] = useState<string | null>(null);

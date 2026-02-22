@@ -19,11 +19,7 @@ interface PendingUser {
   status: 'pending' | 'approved' | 'rejected';
 }
 
-const SAMPLE_PENDING: PendingUser[] = [
-  { id: 'pu1', name: 'Lucas Ferreira', email: 'lucas@email.com', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', requestDate: '2026-02-20', reason: 'Membro da Igreja Batista Central, quero encontrar alguém que compartilhe minha fé.', status: 'pending' },
-  { id: 'pu2', name: 'Camila Souza', email: 'camila@email.com', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', requestDate: '2026-02-19', reason: 'Sou da Assembleia de Deus e busco um relacionamento sério com alguém cristão.', status: 'pending' },
-  { id: 'pu3', name: 'Rafael Mendes', email: 'rafael@email.com', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', requestDate: '2026-02-18', reason: 'Pastor me indicou esse app. Quero conhecer pessoas da fé.', status: 'pending' },
-];
+const SAMPLE_PENDING: PendingUser[] = [];
 
 const InviteSystem: React.FC<InviteSystemProps> = ({ onClose, userName, inviteCode, invitesSent, invitesAccepted }) => {
   const [activeTab, setActiveTab] = useState<'invite' | 'pending' | 'history'>('invite');
@@ -32,7 +28,7 @@ const InviteSystem: React.FC<InviteSystemProps> = ({ onClose, userName, inviteCo
   const [inviteMessage, setInviteMessage] = useState('');
   const [sendingInvite, setSendingInvite] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
-  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>(SAMPLE_PENDING);
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(inviteCode);
@@ -290,30 +286,10 @@ const InviteSystem: React.FC<InviteSystemProps> = ({ onClose, userName, inviteCo
 
             {/* Recent invites */}
             <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest">Convites Recentes</h3>
-            {[
-              { name: 'João Silva', email: 'joao@email.com', date: '20/02/2026', status: 'accepted' },
-              { name: 'Maria Oliveira', email: 'maria@email.com', date: '19/02/2026', status: 'accepted' },
-              { name: 'Pedro Santos', email: 'pedro@email.com', date: '18/02/2026', status: 'pending' },
-              { name: 'Ana Costa', email: 'ana@email.com', date: '17/02/2026', status: 'accepted' },
-              { name: 'Lucas Rocha', email: 'lucas@email.com', date: '16/02/2026', status: 'expired' },
-            ].map((invite, i) => (
-              <div key={i} className="flex items-center gap-3 py-3 border-b border-slate-50">
-                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
-                  <UserPlus size={18} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-slate-800 text-sm font-medium">{invite.name}</p>
-                  <p className="text-slate-400 text-xs">{invite.email} · {invite.date}</p>
-                </div>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                  invite.status === 'accepted' ? 'bg-green-100 text-green-600' :
-                  invite.status === 'pending' ? 'bg-amber-100 text-amber-600' :
-                  'bg-slate-100 text-slate-400'
-                }`}>
-                  {invite.status === 'accepted' ? '✓ Aceito' : invite.status === 'pending' ? '⏳ Pendente' : '✕ Expirado'}
-                </span>
-              </div>
-            ))}
+            <div className="py-8 text-center">
+              <p className="text-slate-400 text-sm">Nenhum convite enviado ainda</p>
+              <p className="text-slate-300 text-xs mt-1">Convide amigos para ganhar benefícios!</p>
+            </div>
           </div>
         )}
       </div>

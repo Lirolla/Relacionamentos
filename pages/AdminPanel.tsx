@@ -34,54 +34,38 @@ interface MockReport {
   status: string; reporterAvatar: string;
 }
 
-// ===== DADOS MOCKADOS =====
-const MOCK_USERS: MockUser[] = [
-  { id: '1', name: 'João Silva', email: 'joao.silva@email.com', age: 35, gender: 'Masculino', church: 'Igreja Batista Central', denomination: 'Batista', location: 'São Paulo, SP', status: 'active', isPremium: true, createdAt: '2024-01-15', lastLogin: '2024-02-21', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'], bio: 'Servo de Deus buscando minha companheira na fé.', phone: '(11) 99999-1111', verificationStatus: 'verified', matchCount: 12, reportCount: 0 },
-  { id: '2', name: 'Maria Santos', email: 'maria.santos@email.com', age: 33, gender: 'Feminino', church: 'Igreja Presbiteriana', denomination: 'Presbiteriana', location: 'Rio de Janeiro, RJ', status: 'active', isPremium: false, createdAt: '2024-01-20', lastLogin: '2024-02-21', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', photos: ['https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'], bio: 'Apaixonada por Jesus e por servir ao próximo.', phone: '(21) 99999-2222', verificationStatus: 'verified', matchCount: 8, reportCount: 0 },
-  { id: '3', name: 'Pedro Oliveira', email: 'pedro.oliveira@email.com', age: 37, gender: 'Masculino', church: 'Assembleia de Deus', denomination: 'Assembleia de Deus', location: 'Belo Horizonte, MG', status: 'active', isPremium: true, createdAt: '2024-02-01', lastLogin: '2024-02-20', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'], bio: 'Líder de louvor buscando alguém para caminhar junto.', phone: '(31) 99999-3333', verificationStatus: 'pending', matchCount: 5, reportCount: 1 },
-  { id: '4', name: 'Ana Costa', email: 'ana.costa@email.com', age: 30, gender: 'Feminino', church: 'Igreja Universal', denomination: 'Universal', location: 'Curitiba, PR', status: 'blocked', isPremium: false, createdAt: '2024-02-10', lastLogin: '2024-02-15', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', photos: ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'], bio: 'Professora de escola dominical.', phone: '(41) 99999-4444', verificationStatus: 'rejected', matchCount: 2, reportCount: 3 },
-  { id: '5', name: 'Lucas Ferreira', email: 'lucas.ferreira@email.com', age: 29, gender: 'Masculino', church: 'Batista da Lagoinha', denomination: 'Batista', location: 'Campinas, SP', status: 'active', isPremium: true, createdAt: '2024-01-05', lastLogin: '2024-02-21', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100', photos: ['https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400'], bio: 'Missionário e apaixonado por missões.', phone: '(19) 99999-5555', verificationStatus: 'none', matchCount: 15, reportCount: 0 },
-  { id: '6', name: 'Rebeca Lima', email: 'rebeca.lima@email.com', age: 26, gender: 'Feminino', church: 'AD Brás', denomination: 'Assembleia de Deus', location: 'Guarulhos, SP', status: 'active', isPremium: false, createdAt: '2024-02-15', lastLogin: '2024-02-21', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100', photos: ['https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400'], bio: 'Professora da EBD, amo crianças.', phone: '(11) 99999-6666', verificationStatus: 'pending', matchCount: 7, reportCount: 0 },
-];
+// ===== DADOS INICIAIS (VAZIOS) =====
+const MOCK_USERS: MockUser[] = [];
 
-const MOCK_SUBSCRIPTIONS: MockSubscription[] = [
-  { id: 'sub_1', userId: '1', userName: 'João Silva', plan: 'Premium Mensal', status: 'active', amount: 'R$ 29,90', startDate: '2024-01-15', nextBilling: '2024-03-15', stripeId: 'sub_1MowQVL2' },
-  { id: 'sub_2', userId: '3', userName: 'Pedro Oliveira', plan: 'Premium Mensal', status: 'active', amount: 'R$ 29,90', startDate: '2024-02-01', nextBilling: '2024-03-01', stripeId: 'sub_2NpxRWM3' },
-  { id: 'sub_3', userId: '5', userName: 'Lucas Ferreira', plan: 'Premium Mensal', status: 'active', amount: 'R$ 29,90', startDate: '2024-01-05', nextBilling: '2024-03-05', stripeId: 'sub_3OqySXN4' },
-  { id: 'sub_4', userId: '6', userName: 'Carla Mendes', plan: 'Premium Mensal', status: 'canceled', amount: 'R$ 29,90', startDate: '2024-01-10', nextBilling: '-', stripeId: 'sub_4PrzTYO5' },
-];
+const MOCK_SUBSCRIPTIONS: MockSubscription[] = [];
 
-const initialChurches: MockChurch[] = [
-  { id: '1', name: 'Igreja Batista Central', denomination: 'Batista', city: 'São Paulo', state: 'SP', members: 45, verified: true, pastor: 'Pr. Roberto Lima', phone: '(11) 3333-1111', address: 'Rua Augusta, 1500', email: 'contato@batistacentral.com.br' },
-  { id: '2', name: 'Igreja Presbiteriana Renovada', denomination: 'Presbiteriana', city: 'Rio de Janeiro', state: 'RJ', members: 32, verified: true, pastor: 'Pr. André Souza', phone: '(21) 3333-2222', address: 'Av. Copacabana, 800', email: 'contato@presbrenovada.com.br' },
-  { id: '3', name: 'Assembleia de Deus Vitória', denomination: 'Assembleia de Deus', city: 'Belo Horizonte', state: 'MG', members: 28, verified: false, pastor: 'Pr. Marcos Silva', phone: '(31) 3333-3333', address: 'Rua da Bahia, 200', email: 'contato@advitoria.com.br' },
-  { id: '4', name: 'Batista da Lagoinha', denomination: 'Batista', city: 'Campinas', state: 'SP', members: 67, verified: true, pastor: 'Pr. Felipe Rocha', phone: '(19) 3333-4444', address: 'Av. Brasil, 3000', email: 'contato@lagoinha.com.br' },
-];
+const initialChurches: MockChurch[] = [];
 
-const initialEvents: MockEvent[] = [
-  { id: '1', title: 'Retiro de Solteiros 2024', church: 'Igreja Batista Central', date: '2024-03-15', time: '08:00', location: 'Campos do Jordão, SP', attendees: 45, type: 'Retiro', description: 'Retiro especial para solteiros cristãos com louvor, palavra e atividades.', maxAttendees: 80, status: 'active' },
-  { id: '2', title: 'Culto de Jovens', church: 'Assembleia de Deus Vitória', date: '2024-02-28', time: '19:30', location: 'Belo Horizonte, MG', attendees: 120, type: 'Culto', description: 'Culto especial para jovens com louvor contemporâneo e palavra.', maxAttendees: 200, status: 'active' },
-  { id: '3', title: 'Conferência de Casais', church: 'Batista da Lagoinha', date: '2024-04-10', time: '14:00', location: 'Campinas, SP', attendees: 200, type: 'Conferência', description: 'Conferência sobre relacionamentos cristãos saudáveis.', maxAttendees: 300, status: 'active' },
-];
+const initialEvents: MockEvent[] = [];
 
-const MOCK_REPORTS: MockReport[] = [
-  { id: '1', reporterName: 'Maria Santos', reportedName: 'Carlos Fake', reportedId: '99', reportedAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', reporterAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', reason: 'Perfil Falso', description: 'Fotos parecem ser de outra pessoa, perfil suspeito. Não responde perguntas sobre sua igreja.', date: '2024-02-20', status: 'pending' },
-  { id: '2', reporterName: 'João Silva', reportedName: 'Ana Costa', reportedId: '4', reportedAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', reporterAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', reason: 'Comportamento Inadequado', description: 'Enviou mensagens ofensivas e inapropriadas no chat. Linguagem vulgar.', date: '2024-02-19', status: 'pending' },
-  { id: '3', reporterName: 'Pedro Oliveira', reportedName: 'Spam Bot', reportedId: '98', reportedAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', reporterAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', reason: 'Spam', description: 'Enviando links suspeitos para todos os matches. Mensagens automáticas.', date: '2024-02-18', status: 'resolved' },
-  { id: '4', reporterName: 'Rebeca Lima', reportedName: 'Usuário Suspeito', reportedId: '97', reportedAvatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100', reporterAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100', reason: 'Assédio', description: 'Insistência em pedir número de telefone e encontro presencial após 2 mensagens.', date: '2024-02-17', status: 'pending' },
-];
+const MOCK_REPORTS: MockReport[] = [];
 
 // ===== COMPONENTE PRINCIPAL =====
+// Helper para carregar dados do localStorage ou usar default
+const loadData = <T,>(key: string, defaultData: T): T => {
+  try {
+    const saved = localStorage.getItem('admin_' + key);
+    return saved ? JSON.parse(saved) : defaultData;
+  } catch { return defaultData; }
+};
+
 const AdminPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [users, setUsers] = useState(MOCK_USERS);
-  const [reports, setReports] = useState(MOCK_REPORTS);
-  const [churches, setChurches] = useState(initialChurches);
-  const [events, setEvents] = useState(initialEvents);
+  const [users, setUsers] = useState<MockUser[]>(() => loadData('users', []));
+  const [reports, setReports] = useState<MockReport[]>(() => loadData('reports', []));
+  const [churches, setChurches] = useState<MockChurch[]>(() => loadData('churches', []));
+  const [events, setEvents] = useState<MockEvent[]>(() => loadData('events', []));
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showCleanConfirm, setShowCleanConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<MockUser | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGender, setFilterGender] = useState('all');
@@ -95,14 +79,50 @@ const AdminPanel: React.FC = () => {
   const [editingChurch, setEditingChurch] = useState<MockChurch | null>(null);
   const [editingEvent, setEditingEvent] = useState<MockEvent | null>(null);
 
+  // Confirmação de ações
+  const [confirmAction, setConfirmAction] = useState<{type: string; id: string; name: string} | null>(null);
+
   // Forms
   const [churchForm, setChurchForm] = useState({ name: '', denomination: '', city: '', state: '', pastor: '', phone: '', address: '', email: '' });
   const [eventForm, setEventForm] = useState({ title: '', church: '', date: '', time: '', location: '', type: 'Culto', description: '', maxAttendees: '100' });
+
+  // Executar ação confirmada
+  const executeConfirmedAction = () => {
+    if (!confirmAction) return;
+    const { type, id } = confirmAction;
+    if (type === 'deleteUser') setUsers(prev => prev.filter(u => u.id !== id));
+    if (type === 'blockUser') setUsers(prev => prev.map(u => u.id === id ? { ...u, status: 'blocked' } : u));
+    if (type === 'unblockUser') setUsers(prev => prev.map(u => u.id === id ? { ...u, status: 'active' } : u));
+    if (type === 'deleteChurch') setChurches(prev => prev.filter(c => c.id !== id));
+    if (type === 'deleteEvent') setEvents(prev => prev.filter(e => e.id !== id));
+    setConfirmAction(null);
+  };
+
+  // Salvar dados no localStorage sempre que mudam
+  useEffect(() => { localStorage.setItem('admin_users', JSON.stringify(users)); }, [users]);
+  useEffect(() => { localStorage.setItem('admin_reports', JSON.stringify(reports)); }, [reports]);
+  useEffect(() => { localStorage.setItem('admin_churches', JSON.stringify(churches)); }, [churches]);
+  useEffect(() => { localStorage.setItem('admin_events', JSON.stringify(events)); }, [events]);
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (token) setIsAuthenticated(true);
   }, []);
+
+  // Limpar TODOS os dados (zerar para producao)
+  const handleCleanAllData = () => {
+    setUsers([]);
+    setChurches([]);
+    setEvents([]);
+    setReports([]);
+    localStorage.removeItem('admin_users');
+    localStorage.removeItem('admin_reports');
+    localStorage.removeItem('admin_churches');
+    localStorage.removeItem('admin_events');
+    setShowCleanConfirm(false);
+  };
+
+
 
   const handleLogin = () => {
     if (loginUser === 'admin' && loginPass === 'admin123') {
@@ -274,6 +294,7 @@ const AdminPanel: React.FC = () => {
               <Bell size={18} />
               {pendingReports.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center">{pendingReports.length}</span>}
             </button>
+
             <button onClick={handleLogout} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all text-sm font-medium">
               <LogOut size={16} /> Sair
             </button>
@@ -307,7 +328,7 @@ const AdminPanel: React.FC = () => {
               <div className="bg-white p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center"><Users size={22} className="text-blue-600" /></div>
-                  <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full"><ArrowUpRight size={12} /> +12%</span>
+                  <span className="flex items-center gap-1 text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">Total</span>
                 </div>
                 <p className="text-3xl font-black text-gray-800">{users.length}</p>
                 <p className="text-sm text-gray-500 mt-1">Usuários Totais</p>
@@ -316,16 +337,16 @@ const AdminPanel: React.FC = () => {
               <div className="bg-white p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center"><Crown size={22} className="text-amber-600" /></div>
-                  <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full"><ArrowUpRight size={12} /> +8%</span>
+                  <span className="flex items-center gap-1 text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">Total</span>
                 </div>
                 <p className="text-3xl font-black text-gray-800">{premiumUsers}</p>
                 <p className="text-sm text-gray-500 mt-1">Assinantes Premium</p>
-                <p className="text-xs text-gray-400 mt-0.5">{Math.round(premiumUsers/users.length*100)}% dos usuários</p>
+                <p className="text-xs text-gray-400 mt-0.5">{users.length > 0 ? Math.round(premiumUsers/users.length*100) : 0}% dos usuários</p>
               </div>
               <div className="bg-white p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center"><DollarSign size={22} className="text-green-600" /></div>
-                  <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full"><ArrowUpRight size={12} /> +15%</span>
+                  <span className="flex items-center gap-1 text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">Total</span>
                 </div>
                 <p className="text-3xl font-black text-gray-800">R$ {totalRevenue.toFixed(2)}</p>
                 <p className="text-sm text-gray-500 mt-1">Receita Mensal</p>
@@ -405,27 +426,9 @@ const AdminPanel: React.FC = () => {
               {/* Atividades Recentes */}
               <div className="bg-white p-6 rounded-2xl shadow-sm border">
                 <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Activity size={18} className="text-blue-500" /> Atividades Recentes</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"><CreditCard size={14} className="text-green-600" /></div>
-                    <div><p className="text-sm text-gray-700 font-medium">João Silva assinou Premium</p><p className="text-xs text-gray-400">Há 2 horas</p></div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0"><Flag size={14} className="text-red-600" /></div>
-                    <div><p className="text-sm text-gray-700 font-medium">Nova denúncia recebida</p><p className="text-xs text-gray-400">Há 3 horas</p></div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><Users size={14} className="text-blue-600" /></div>
-                    <div><p className="text-sm text-gray-700 font-medium">5 novos usuários hoje</p><p className="text-xs text-gray-400">Há 4 horas</p></div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0"><ShieldCheck size={14} className="text-amber-600" /></div>
-                    <div><p className="text-sm text-gray-700 font-medium">Rebeca Lima pediu verificação</p><p className="text-xs text-gray-400">Há 5 horas</p></div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0"><Heart size={14} className="text-purple-600" /></div>
-                    <div><p className="text-sm text-gray-700 font-medium">23 novos matches hoje</p><p className="text-xs text-gray-400">Há 6 horas</p></div>
-                  </div>
+                <div className="py-8 text-center">
+                  <p className="text-gray-400 text-sm">Nenhuma atividade registrada ainda</p>
+                  <p className="text-gray-300 text-xs mt-1">As atividades dos usuários aparecerão aqui</p>
                 </div>
               </div>
             </div>
@@ -444,12 +447,12 @@ const AdminPanel: React.FC = () => {
               </div>
               <div className="bg-gradient-to-br from-pink-500 to-pink-600 p-5 rounded-2xl text-white">
                 <Heart size={24} className="mb-2 opacity-80" />
-                <p className="text-2xl font-bold">156</p>
+                <p className="text-2xl font-bold">0</p>
                 <p className="text-pink-100 text-sm">Matches Este Mês</p>
               </div>
               <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 rounded-2xl text-white">
                 <MessageSquare size={24} className="mb-2 opacity-80" />
-                <p className="text-2xl font-bold">1.2k</p>
+                <p className="text-2xl font-bold">0</p>
                 <p className="text-emerald-100 text-sm">Mensagens Hoje</p>
               </div>
             </div>
@@ -536,11 +539,11 @@ const AdminPanel: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setSelectedUser(user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl" title="Ver detalhes"><Eye size={18} /></button>
-                    <button onClick={() => setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: u.status === 'blocked' ? 'active' : 'blocked' } : u))}
+                    <button onClick={() => setConfirmAction({type: user.status === 'blocked' ? 'unblockUser' : 'blockUser', id: user.id, name: user.name})}
                       className={`p-2 rounded-xl ${user.status === 'blocked' ? 'text-green-600 hover:bg-green-50' : 'text-orange-600 hover:bg-orange-50'}`} title={user.status === 'blocked' ? 'Desbloquear' : 'Bloquear'}>
                       <Ban size={18} />
                     </button>
-                    <button onClick={() => { if (confirm('Tem certeza que deseja excluir ' + user.name + '?')) setUsers(prev => prev.filter(u => u.id !== user.id)); }}
+                    <button onClick={() => setConfirmAction({type: 'deleteUser', id: user.id, name: user.name})}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-xl" title="Excluir"><Trash2 size={18} /></button>
                   </div>
                 </div>
@@ -745,7 +748,7 @@ const AdminPanel: React.FC = () => {
                       {church.verified ? 'Remover Verificação' : 'Verificar'}
                     </button>
                     <button onClick={() => handleEditChurch(church)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl" title="Editar"><Edit3 size={18} /></button>
-                    <button onClick={() => handleDeleteChurch(church.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl" title="Excluir"><Trash2 size={18} /></button>
+                    <button onClick={() => setConfirmAction({type: 'deleteChurch', id: church.id, name: church.name})} className="p-2 text-red-600 hover:bg-red-50 rounded-xl" title="Excluir"><Trash2 size={18} /></button>
                   </div>
                 </div>
               </div>
@@ -881,7 +884,7 @@ const AdminPanel: React.FC = () => {
                       {event.status === 'active' ? 'Cancelar' : 'Reativar'}
                     </button>
                     <button onClick={() => handleEditEvent(event)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl" title="Editar"><Edit3 size={18} /></button>
-                    <button onClick={() => handleDeleteEvent(event.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl" title="Excluir"><Trash2 size={18} /></button>
+                    <button onClick={() => setConfirmAction({type: 'deleteEvent', id: event.id, name: event.title})} className="p-2 text-red-600 hover:bg-red-50 rounded-xl" title="Excluir"><Trash2 size={18} /></button>
                   </div>
                 </div>
               </div>
@@ -1020,6 +1023,73 @@ const AdminPanel: React.FC = () => {
         )}
 
       </main>
+
+      {/* Modal Confirmar Acao (Excluir/Bloquear/Desbloquear) */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConfirmAction(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+                confirmAction.type.includes('delete') ? 'bg-red-100' : confirmAction.type === 'blockUser' ? 'bg-orange-100' : 'bg-green-100'
+              }`}>
+                {confirmAction.type.includes('delete') ? <Trash2 size={32} className="text-red-500" /> : confirmAction.type === 'blockUser' ? <Ban size={32} className="text-orange-500" /> : <CheckCircle size={32} className="text-green-500" />}
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">
+                {confirmAction.type === 'deleteUser' && 'Excluir Usuario'}
+                {confirmAction.type === 'blockUser' && 'Bloquear Usuario'}
+                {confirmAction.type === 'unblockUser' && 'Desbloquear Usuario'}
+                {confirmAction.type === 'deleteChurch' && 'Excluir Igreja'}
+                {confirmAction.type === 'deleteEvent' && 'Excluir Evento'}
+              </h2>
+              <p className="text-gray-500 text-sm mt-2">
+                Tem certeza que deseja {confirmAction.type.includes('delete') ? 'excluir' : confirmAction.type === 'blockUser' ? 'bloquear' : 'desbloquear'} <strong className="text-gray-800">{confirmAction.name}</strong>?
+              </p>
+              {confirmAction.type.includes('delete') && <p className="text-red-500 text-xs mt-2 font-bold">Esta acao nao pode ser desfeita!</p>}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmAction(null)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Cancelar</button>
+              <button onClick={executeConfirmedAction} className={`flex-1 py-3 text-white font-bold rounded-xl flex items-center justify-center gap-2 ${
+                confirmAction.type.includes('delete') ? 'bg-red-500 hover:bg-red-600' : confirmAction.type === 'blockUser' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'
+              }`}>
+                {confirmAction.type.includes('delete') ? 'Excluir' : confirmAction.type === 'blockUser' ? 'Bloquear' : 'Desbloquear'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmar Limpar Todos os Dados */}
+      {showCleanConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowCleanConfirm(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} className="text-red-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Limpar Todos os Dados</h2>
+              <p className="text-gray-500 text-sm mt-2">Esta acao vai remover TODOS os dados do sistema:</p>
+            </div>
+            <div className="bg-red-50 p-4 rounded-xl mb-6">
+              <ul className="space-y-2 text-sm text-red-700">
+                <li className="flex items-center gap-2"><XCircle size={14} /> Todos os usuarios</li>
+                <li className="flex items-center gap-2"><XCircle size={14} /> Todas as igrejas</li>
+                <li className="flex items-center gap-2"><XCircle size={14} /> Todos os eventos</li>
+                <li className="flex items-center gap-2"><XCircle size={14} /> Todas as denuncias</li>
+              </ul>
+              <p className="text-xs text-red-500 mt-3 font-bold">O sistema ficara zerado e pronto para uso real.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowCleanConfirm(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Cancelar</button>
+              <button onClick={handleCleanAllData} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 flex items-center justify-center gap-2">
+                <Trash2 size={16} /> Limpar Tudo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
     </div>
   );
 };

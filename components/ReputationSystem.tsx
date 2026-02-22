@@ -293,24 +293,11 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ partnerName, partnerPhoto, on
 // Dados de exemplo para reputação
 const SAMPLE_REPUTATION: ReputationProps = {
   userName: '',
-  overallRating: 4.7,
-  totalReviews: 8,
+  overallRating: 0,
+  totalReviews: 0,
   isOwnProfile: true,
-  traits: [
-    { name: '🙏 Respeitoso(a)', count: 7, percentage: 88 },
-    { name: '😊 Gentil', count: 6, percentage: 75 },
-    { name: '✝️ Fé genuína', count: 6, percentage: 75 },
-    { name: '💬 Boa conversa', count: 5, percentage: 63 },
-    { name: '📸 Fotos reais', count: 5, percentage: 63 },
-    { name: '🤝 Confiável', count: 4, percentage: 50 },
-    { name: '🌟 Autêntico(a)', count: 3, percentage: 38 },
-  ],
-  badges: [
-    { id: 'b1', name: 'Primeiro Encontro', description: 'Completou o primeiro encontro', icon: '☕', earned: true, progress: 1, total: 1 },
-    { id: 'b2', name: '5 Estrelas', description: 'Recebeu 5 avaliações de 5 estrelas', icon: '⭐', earned: true, progress: 5, total: 5 },
-    { id: 'b3', name: 'Respeitoso', description: 'Citado como respeitoso 10 vezes', icon: '🙏', earned: false, progress: 7, total: 10 },
-    { id: 'b4', name: 'Popular', description: 'Recebeu 20 avaliações', icon: '🔥', earned: false, progress: 8, total: 20 },
-  ],
+  traits: [],
+  badges: [],
 };
 
 export { ReputationDisplay, ReviewModal, SAMPLE_REPUTATION };

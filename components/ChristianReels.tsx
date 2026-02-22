@@ -22,61 +22,7 @@ interface Reel {
   createdAt: string;
 }
 
-const SAMPLE_REELS: Reel[] = [
-  {
-    id: 'r1', userId: 'p1', userName: 'Maria Santos', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    isPastorVerified: true, churchName: 'Igreja Presbiteriana',
-    videoUrl: '', thumbnailUrl: 'https://images.unsplash.com/photo-1507692049790-de58290a4334?w=600',
-    caption: 'Que momento incrível de louvor! Deus é fiel em todas as circunstâncias. 🙏✨ #louvor #adoração',
-    category: 'louvor', musicName: 'Lugar Secreto - Gabriela Rocha',
-    likes: 1247, comments: [
-      { id: 'c1', userName: 'Lucas Ferreira', text: 'Amém! Que lindo! 🙌', createdAt: '2h' },
-      { id: 'c2', userName: 'Ana Costa', text: 'Glória a Deus!', createdAt: '1h' },
-    ], shares: 89, isLiked: false, isSaved: false, createdAt: '3h'
-  },
-  {
-    id: 'r2', userId: 'p2', userName: 'Lucas Ferreira', userPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
-    isPastorVerified: false, churchName: 'Batista da Lagoinha',
-    videoUrl: '', thumbnailUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600',
-    caption: 'Meu testemunho de como Deus transformou minha vida. De depressão para alegria plena! 💪🔥',
-    category: 'testemunho', musicName: 'Deus é Deus - Delino Marçal',
-    likes: 3456, comments: [
-      { id: 'c3', userName: 'Sarah Oliveira', text: 'Que testemunho poderoso! 😭🙏', createdAt: '5h' },
-    ], shares: 234, isLiked: false, isSaved: false, createdAt: '6h'
-  },
-  {
-    id: 'r3', userId: 'p3', userName: 'Sarah Oliveira', userPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-    isPastorVerified: true, churchName: 'AD Brás',
-    videoUrl: '', thumbnailUrl: 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=600',
-    caption: '📖 Devocional do dia: "Porque Deus amou o mundo de tal maneira..." João 3:16. Reflita comigo!',
-    category: 'devocional',
-    likes: 892, comments: [
-      { id: 'c4', userName: 'Gabriel Santos', text: 'Versículo que mudou minha vida!', createdAt: '2h' },
-      { id: 'c5', userName: 'Rebeca Lima', text: 'Amém! Obrigada por compartilhar 🙏', createdAt: '1h' },
-    ], shares: 156, isLiked: false, isSaved: false, createdAt: '8h'
-  },
-  {
-    id: 'r4', userId: 'p4', userName: 'Gabriel Santos', userPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-    isPastorVerified: false, churchName: 'IEQ Sede',
-    videoUrl: '', thumbnailUrl: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=600',
-    caption: 'Nossa igreja fez uma ação social incrível! Alimentamos 200 famílias. Deus usa quem se dispõe! 🤝❤️',
-    category: 'igreja',
-    likes: 2103, comments: [
-      { id: 'c6', userName: 'Maria Santos', text: 'Que trabalho lindo! Parabéns! 👏', createdAt: '4h' },
-    ], shares: 312, isLiked: false, isSaved: false, createdAt: '12h'
-  },
-  {
-    id: 'r5', userId: 'p5', userName: 'Rebeca Lima', userPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-    isPastorVerified: false, churchName: 'Batista Memorial',
-    videoUrl: '', thumbnailUrl: 'https://images.unsplash.com/photo-1476234251651-f353703a034d?w=600',
-    caption: '✨ Reflexão: Deus não te trouxe até aqui para te abandonar. Confie no processo! #fé #confiança',
-    category: 'reflexao', musicName: 'Confio em Ti - Isaías Saad',
-    likes: 4521, comments: [
-      { id: 'c7', userName: 'Lucas Ferreira', text: 'Exatamente o que eu precisava ouvir hoje! 🙌', createdAt: '1h' },
-      { id: 'c8', userName: 'Sarah Oliveira', text: 'Amém! Deus é fiel! ❤️', createdAt: '30min' },
-    ], shares: 567, isLiked: false, isSaved: false, createdAt: '1d'
-  },
-];
+const SAMPLE_REELS: Reel[] = [];
 
 const CATEGORIES = [
   { id: 'all', label: 'Para Você', icon: '✨' },
@@ -88,7 +34,7 @@ const CATEGORIES = [
 ];
 
 const ChristianReels: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
-  const [reels, setReels] = useState<Reel[]>(SAMPLE_REELS);
+  const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);

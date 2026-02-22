@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
 import { X, MapPin, Church, Calendar, Navigation2, Star, Users, Clock, Filter, ChevronRight, Phone, Globe, Award } from 'lucide-react';
 
-const CHURCHES_MAP = [
-  { id: 'c1', name: 'Igreja Batista Central', denomination: 'Batista', address: 'Rua Augusta, 1200 - São Paulo, SP', distance: '1.2 km', rating: 4.8, members: 450, verified: true, pastor: 'Pr. João Silva', phone: '(11) 3456-7890', lat: -23.55, lng: -46.65, services: ['Domingo 9h', 'Domingo 19h', 'Quarta 19:30'], events: 3 },
-  { id: 'c2', name: 'Igreja Presbiteriana Renovada', denomination: 'Presbiteriana', address: 'Av. Paulista, 800 - São Paulo, SP', distance: '2.5 km', rating: 4.6, members: 320, verified: true, pastor: 'Pr. Carlos Mendes', phone: '(11) 3789-0123', lat: -23.56, lng: -46.66, services: ['Domingo 10h', 'Domingo 18h'], events: 1 },
-  { id: 'c3', name: 'Assembleia de Deus Vitória', denomination: 'Assembleia de Deus', address: 'Rua da Consolação, 500 - São Paulo, SP', distance: '3.8 km', rating: 4.5, members: 680, verified: false, pastor: 'Pr. Marcos Oliveira', phone: '(11) 3234-5678', lat: -23.54, lng: -46.67, services: ['Domingo 9h', 'Domingo 18h', 'Terça 19:30', 'Quinta 19:30'], events: 2 },
-  { id: 'c4', name: 'Comunidade Cristã Vida Nova', denomination: 'Não denominacional', address: 'Rua Oscar Freire, 300 - São Paulo, SP', distance: '4.1 km', rating: 4.9, members: 200, verified: true, pastor: 'Pr. André Lima', phone: '(11) 3567-8901', lat: -23.57, lng: -46.68, services: ['Domingo 10:30', 'Sexta 20h'], events: 5 },
-  { id: 'c5', name: 'Igreja Metodista Central', denomination: 'Metodista', address: 'Av. Brigadeiro, 1500 - São Paulo, SP', distance: '5.3 km', rating: 4.4, members: 280, verified: true, pastor: 'Pra. Maria Costa', phone: '(11) 3678-9012', lat: -23.58, lng: -46.64, services: ['Domingo 9h', 'Domingo 18h', 'Quarta 19h'], events: 0 },
-];
+const CHURCHES_MAP: any[] = [];
 
-const NEARBY_EVENTS = [
-  { id: 'ne1', title: 'Retiro de Solteiros 2026', church: 'Igreja Batista Central', date: '15 Mar', time: '08:00', location: 'Campos do Jordão, SP', distance: '180 km', attendees: 120, type: 'retiro', color: 'bg-emerald-500' },
-  { id: 'ne2', title: 'Culto de Jovens Especial', church: 'Comunidade Cristã Vida Nova', date: '01 Mar', time: '19:30', location: 'Rua Oscar Freire, 300', distance: '4.1 km', attendees: 85, type: 'culto', color: 'bg-blue-500' },
-  { id: 'ne3', title: 'Workshop: Relacionamentos Saudáveis', church: 'Igreja Presbiteriana Renovada', date: '08 Mar', time: '14:00', location: 'Av. Paulista, 800', distance: '2.5 km', attendees: 45, type: 'workshop', color: 'bg-purple-500' },
-  { id: 'ne4', title: 'Louvor ao Pôr do Sol', church: 'Assembleia de Deus Vitória', date: '22 Fev', time: '17:00', location: 'Parque Ibirapuera', distance: '3.2 km', attendees: 200, type: 'louvor', color: 'bg-amber-500' },
-];
+const NEARBY_EVENTS: any[] = [];
 
 interface ChurchMapProps {
   onClose: () => void;

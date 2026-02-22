@@ -36,46 +36,7 @@ interface CommunityFeedProps {
   currentUserPhoto: string;
 }
 
-const SAMPLE_POSTS: FeedPost[] = [
-  {
-    id: 'fp1', userId: 'p1', userName: 'Maria Santos', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    userChurch: 'Igreja Presbiteriana Renovada', isVerified: true, isPastorVerified: true,
-    content: 'Que culto abençoado ontem! O louvor tocou meu coração de uma forma especial. Deus é fiel em todas as circunstâncias. "Porque Dele, por Ele e para Ele são todas as coisas." Romanos 11:36',
-    imageUrl: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=600',
-    category: 'testemunho', likes: 47, comments: [
-      { id: 'c1', userId: 'p2', userName: 'Ana Costa', userPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50', text: 'Amém! Que lindo testemunho! 🙏', createdAt: '2h' },
-      { id: 'c2', userId: 'p3', userName: 'Pedro Oliveira', userPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50', text: 'Deus é maravilhoso! Glória a Deus!', createdAt: '1h' },
-    ],
-    liked: false, saved: false, location: 'São Paulo, SP', createdAt: '3h'
-  },
-  {
-    id: 'fp2', userId: 'p4', userName: 'Lucas Ferreira', userPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-    userChurch: 'Batista da Lagoinha', isVerified: true,
-    content: '📖 Devocional do dia: "Confie no Senhor de todo o seu coração e não se apoie em seu próprio entendimento; reconheça o Senhor em todos os seus caminhos, e Ele endireitará as suas veredas." - Provérbios 3:5-6\n\nEsse versículo tem me sustentado nessa semana. Compartilhem o versículo que está no coração de vocês!',
-    category: 'devocional', likes: 89, comments: [
-      { id: 'c3', userId: 'p1', userName: 'Maria Santos', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50', text: 'Salmos 23 tem sido meu refúgio! ❤️', createdAt: '45min' },
-    ],
-    liked: true, saved: true, createdAt: '5h'
-  },
-  {
-    id: 'fp3', userId: 'p2', userName: 'Ana Costa', userPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-    userChurch: 'Assembleia de Deus Vitória', isPastorVerified: true,
-    content: 'Momento de louvor no grupo de jovens! 🎵 Nada melhor do que adorar ao Senhor com os irmãos. Venham participar toda quarta-feira às 19h30!',
-    imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600',
-    category: 'louvor', likes: 63, comments: [],
-    liked: false, saved: false, location: 'Belo Horizonte, MG', createdAt: '8h'
-  },
-  {
-    id: 'fp4', userId: 'p5', userName: 'Rebeca Lima', userPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-    userChurch: 'AD Brás',
-    content: '✨ Reflexão: Deus não nos chamou para sermos perfeitos, mas para sermos fiéis. Cada dia é uma nova oportunidade de recomeçar com Ele. Não desista dos seus sonhos, porque o Autor da vida está escrevendo a sua história!\n\n#FéEmDeus #VidaCristã #Esperança',
-    category: 'reflexao', likes: 124, comments: [
-      { id: 'c4', userId: 'p4', userName: 'Lucas Ferreira', userPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50', text: 'Que palavra poderosa! Amém! 🔥', createdAt: '2h' },
-      { id: 'c5', userId: 'p1', userName: 'Maria Santos', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50', text: 'Isso tocou meu coração! Obrigada por compartilhar!', createdAt: '1h' },
-    ],
-    liked: false, saved: false, createdAt: '12h'
-  },
-];
+const SAMPLE_POSTS: FeedPost[] = [];
 
 const CATEGORIES = [
   { key: 'todos', label: 'Todos', icon: '✨' },
@@ -88,7 +49,7 @@ const CATEGORIES = [
 ];
 
 const CommunityFeed: React.FC<CommunityFeedProps> = ({ currentUserId, currentUserName, currentUserPhoto }) => {
-  const [posts, setPosts] = useState<FeedPost[]>(SAMPLE_POSTS);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');

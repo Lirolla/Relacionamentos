@@ -18,58 +18,10 @@ interface NotificationCenterProps {
   onNavigate?: (tab: string) => void;
 }
 
-const SAMPLE_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'n1', type: 'match', title: 'Novo Match!',
-    description: 'Você e Maria Santos deram match! Comece uma conversa agora.',
-    imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    read: false, createdAt: '5 min'
-  },
-  {
-    id: 'n2', type: 'message', title: 'Nova mensagem',
-    description: 'Ana Costa enviou: "Oi! Vi que frequentamos a mesma denominação..."',
-    imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-    read: false, createdAt: '15 min'
-  },
-  {
-    id: 'n3', type: 'devotional', title: 'Devocional do Dia',
-    description: '"Acima de tudo, revistam-se do amor..." - Colossenses 3:14. Medite com seu match!',
-    read: false, createdAt: '1h'
-  },
-  {
-    id: 'n4', type: 'event', title: 'Evento perto de você!',
-    description: 'Retiro de Solteiros 2026 acontece em 15/03 em Campos do Jordão. Inscreva-se!',
-    read: false, createdAt: '2h'
-  },
-  {
-    id: 'n5', type: 'prayer', title: 'Pedido de oração',
-    description: '12 pessoas já oraram pelo seu pedido "Direção profissional". A comunidade está com você!',
-    read: true, createdAt: '3h'
-  },
-  {
-    id: 'n6', type: 'community', title: 'Post em destaque',
-    description: 'Seu testemunho recebeu 47 curtidas! A comunidade foi abençoada.',
-    read: true, createdAt: '5h'
-  },
-  {
-    id: 'n7', type: 'pastor', title: 'Verificação Pastoral',
-    description: 'Pastor João da Igreja Batista Central verificou seu perfil! Agora você tem o selo "Pastor Aprova".',
-    read: true, createdAt: '1d'
-  },
-  {
-    id: 'n8', type: 'verification', title: 'Identidade Verificada',
-    description: 'Sua verificação de identidade foi aprovada! Seu perfil agora tem o selo de verificado.',
-    read: true, createdAt: '2d'
-  },
-  {
-    id: 'n9', type: 'premium', title: 'Oferta Premium',
-    description: 'Desbloqueie likes ilimitados, veja quem curtiu você e muito mais. 7 dias grátis!',
-    read: true, createdAt: '3d'
-  },
-];
+const SAMPLE_NOTIFICATIONS: AppNotification[] = [];
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose, onNavigate }) => {
-  const [notifications, setNotifications] = useState<AppNotification[]>(SAMPLE_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   const unreadCount = notifications.filter(n => !n.read).length;

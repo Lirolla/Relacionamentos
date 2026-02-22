@@ -47,12 +47,7 @@ const FILTERS = [
   { id: 'divine', name: 'Divino', style: { filter: 'brightness(1.2) saturate(1.3) contrast(0.95)' } },
 ];
 
-const SAMPLE_PHOTOS = [
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600',
-  'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600',
-  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600',
-];
+const SAMPLE_PHOTOS: string[] = [];
 
 const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userName, userPhoto }) => {
   const [step, setStep] = useState<'capture' | 'edit' | 'preview'>('capture');

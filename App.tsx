@@ -308,18 +308,11 @@ const App: React.FC = () => {
   const [verificationStatus, setVerificationStatus] = useState<'none'|'pending'|'verified'|'rejected'>('none');
 
   // Stories
-  const [stories, setStories] = useState([
-    { id: 's1', userId: 'p1', userName: 'Maria Santos', userPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', createdAt: new Date().toISOString() },
-    { id: 's2', userId: 'p2', userName: 'Ana Costa', userPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100', imageUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400', createdAt: new Date().toISOString() },
-  ]);
+  const [stories, setStories] = useState<any[]>([]);
 
   // Events
   const [showEvents, setShowEvents] = useState(false);
-  const [events, setEvents] = useState([
-    { id: 'e1', title: 'Retiro de Casais', description: 'Retiro especial para casais e solteiros', date: '2026-03-15', time: '08:00', location: 'Chácara Esperança, SP', church: 'Igreja Batista Central', attendees: 45, type: 'retiro' },
-    { id: 'e2', title: 'Culto de Jovens', description: 'Culto especial com louvor e palavra', date: '2026-03-01', time: '19:30', location: 'Igreja Presbiteriana, RJ', church: 'Igreja Presbiteriana', attendees: 120, type: 'culto' },
-    { id: 'e3', title: 'Conferência de Solteiros', description: 'Conferência sobre relacionamentos cristãos', date: '2026-04-10', time: '14:00', location: 'Centro de Convenções, MG', church: 'AD Vitória', attendees: 200, type: 'conferencia' },
-  ]);
+  const [events, setEvents] = useState<any[]>([]);
 
   // Forgot Password
   const [showForgotPassword, setShowForgotPassword] = useState(false);
