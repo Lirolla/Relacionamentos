@@ -67,11 +67,21 @@ const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> =
 );
 
 // ===================== TELA DE LOGIN =====================
-const LoginScreen: React.FC<{ onLogin: () => void; onBack: () => void; onForgotPassword: () => void }> = ({ onLogin, onBack, onForgotPassword }) => {
+const LoginScreen: React.FC<{ onLogin: (email: string, password: string) => void; onBack: () => void; onForgotPassword: () => void }> = ({ onLogin, onBack, onForgotPassword }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState('');
   
+  const handleLogin = () => {
+    if (!email || !password) {
+      setError('Preencha todos os campos');
+      return;
+    }
+    setError('');
+    onLogin(email, password);
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col p-8">
       <button onClick={onBack} className="self-start p-3 bg-slate-50 rounded-2xl text-slate-400 mb-8"><ArrowLeft size={24}/></button>
@@ -99,10 +109,12 @@ const LoginScreen: React.FC<{ onLogin: () => void; onBack: () => void; onForgotP
               </button>
             </div>
           </div>
+
+          {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
           
           <button onClick={onForgotPassword} className="text-amber-600 text-sm font-bold self-end">Esqueci minha senha</button>
           
-          <button onClick={onLogin} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
+          <button onClick={handleLogin} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
             Entrar
           </button>
         </div>
@@ -358,6 +370,9 @@ const App: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [chatMessages, setChatMessages] = useState<EnhancedMessage[]>([]);
 
+  // ===== ADMIN GERAL =====
+  const [isAdmin, setIsAdmin] = useState(localStorage.getItem('is_admin') === 'true');
+
   // ===== TRIAL + PAYWALL =====
   const [trialStartDate] = useState<string | null>(localStorage.getItem('trial_start'));
   const [isPaid, setIsPaid] = useState(localStorage.getItem('subscription_active') === 'true');
@@ -374,8 +389,28 @@ const App: React.FC = () => {
   };
 
   const trialDaysLeft = getTrialDaysLeft();
-  const isTrialExpired = trialDaysLeft <= 0 && !isPaid;
-  const isVerified = verificationStatus === 'verified' || localStorage.getItem('identity_verified') === 'true';
+  const isTrialExpired = trialDaysLeft <= 0 && !isPaid && !isAdmin;
+  const isVerified = verificationStatus === 'verified' || localStorage.getItem('identity_verified') === 'true' || isAdmin;
+
+  // Login handler
+  const handleLogin = (email: string, password: string) => {
+    // Admin geral - bypass total
+    if (email === 'contato@lirolla.com' && password === 'Pagotto24') {
+      localStorage.setItem('is_admin', 'true');
+      localStorage.setItem('identity_verified', 'true');
+      setIsAdmin(true);
+      setVerificationStatus('verified');
+      setState(prev => ({
+        ...prev,
+        currentUser: { ...prev.currentUser, name: 'Admin', role: UserRole.ADMIN }
+      }));
+      setScreen('app');
+      setActiveTab('admin');
+      return;
+    }
+    // Login normal
+    setScreen('app');
+  };
 
   // Quando verificação é aprovada, iniciar trial
   useEffect(() => {
@@ -392,6 +427,15 @@ const App: React.FC = () => {
     const savedVerification = localStorage.getItem('identity_verified');
     if (savedVerification === 'true') {
       setVerificationStatus('verified');
+    }
+    // Restaurar sessão admin
+    if (localStorage.getItem('is_admin') === 'true') {
+      setIsAdmin(true);
+      setVerificationStatus('verified');
+      setState(prev => ({
+        ...prev,
+        currentUser: { ...prev.currentUser, name: 'Admin', role: UserRole.ADMIN }
+      }));
     }
   }, []);
 
@@ -528,7 +572,7 @@ const App: React.FC = () => {
   if (showOnboarding) return <Onboarding onComplete={() => { setShowOnboarding(false); localStorage.setItem('onboarding_done', 'true'); }} />;
   if (showForgotPassword) return <ForgotPassword onSubmit={(email) => { alert('Email de recuperação enviado para ' + email); setShowForgotPassword(false); }} onBack={() => setShowForgotPassword(false)} />;
   if (screen === 'welcome') return <WelcomeScreen onLogin={() => setScreen('login')} onRegister={() => setScreen('register')} />;
-  if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')} onBack={() => setScreen('welcome')} onForgotPassword={() => setShowForgotPassword(true)} />;
+  if (screen === 'login') return <LoginScreen onLogin={handleLogin} onBack={() => setScreen('welcome')} onForgotPassword={() => setShowForgotPassword(true)} />;
   if (screen === 'register') return <RegisterScreen onRegister={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
 
   // ===================== TELA DE VERIFICAÇÃO OBRIGATÓRIA =====================
