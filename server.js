@@ -88,13 +88,14 @@ app.get('/api/health', async (req, res) => {
 // =====================================================
 app.post('/api/admin/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const rows = await query('SELECT * FROM users WHERE email = ? AND role = ?', [username, 'admin']);
+    const { username, password, email } = req.body;
+    const loginEmail = email || username;
+    const rows = await query('SELECT * FROM users WHERE email = ? AND role = ?', [loginEmail, 'admin']);
     if (rows.length === 0) return res.status(401).json({ error: 'Usuário ou senha incorretos' });
     const admin = rows[0];
     const match = await bcrypt.compare(password, admin.password_hash);
     if (!match) return res.status(401).json({ error: 'Usuário ou senha incorretos' });
-    res.json({ token: 'admin-token-' + Date.now(), message: 'Login realizado com sucesso', user: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } });
+    res.json({ success: true, token: 'admin-token-' + Date.now(), message: 'Login realizado com sucesso', user: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } });
   } catch (err) {
     console.error('Erro admin login:', err.message);
     res.status(500).json({ error: 'Erro interno' });
