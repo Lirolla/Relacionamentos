@@ -322,7 +322,7 @@ app.post('/api/admin/events', async (req, res) => {
       [title, description, date, time, end_date, location, church_id, category || 'outro', max_participants || 100, price || 0, is_free ? 1 : 0]
     );
     res.status(201).json({ message: 'Evento criado', id: result.insertId });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+  } catch (err) { console.error('Erro criar evento:', err.message, err.sql); res.status(500).json({ error: 'Erro interno', detail: err.message }); }
 });
 
 app.put('/api/admin/events/:id', async (req, res) => {
