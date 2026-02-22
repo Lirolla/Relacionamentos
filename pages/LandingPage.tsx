@@ -25,7 +25,6 @@ const LandingPage: React.FC = () => {
           <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-700">
             <a href="#como-funciona" className="hover:text-amber-600 transition-colors">Como Funciona</a>
             <a href="#recursos" className="hover:text-amber-600 transition-colors">Recursos</a>
-            <a href="#depoimentos" className="hover:text-amber-600 transition-colors">Depoimentos</a>
             <a href="#planos" className="hover:text-amber-600 transition-colors">Planos</a>
             <a href="/tutorial" className="hover:text-amber-600 transition-colors">Tutorial</a>
           </nav>
@@ -63,7 +62,7 @@ const LandingPage: React.FC = () => {
             <div className="flex items-center gap-8 flex-wrap justify-center lg:justify-start text-sm font-bold text-gray-600">
               <span className="flex items-center gap-2"><Check size={20} className="text-green-600" /> Grátis para começar</span>
               <span className="flex items-center gap-2"><Shield size={20} className="text-blue-600" /> 100% Seguro e Verificado</span>
-              <span className="flex items-center gap-2"><Heart size={20} className="text-red-600" /> +10.000 membros ativos</span>
+              <span className="flex items-center gap-2"><Heart size={20} className="text-red-600" /> Comunidade cristã ativa</span>
             </div>
           </div>
           <div className="flex-1 relative">
@@ -72,15 +71,7 @@ const LandingPage: React.FC = () => {
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-white rounded-3xl shadow-2xl flex items-center justify-center animate-bounce">
                 <Heart size={40} className="text-red-500 fill-red-500" />
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-3xl shadow-2xl p-4 flex items-center gap-3 animate-pulse">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-                  <Check size={24} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-black text-gray-900">Novo Match!</p>
-                  <p className="text-xs text-gray-600">87% compatível na fé</p>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
@@ -162,35 +153,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Depoimentos */}
-      <section id="depoimentos" className="py-24 px-6 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-6xl font-black text-gray-900 mb-6">Histórias de Sucesso</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Casais que se encontraram através da Conexão Divina e hoje vivem um relacionamento abençoado.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              { name: 'Lucas & Amanda', time: 'Juntos há 1 ano', text: 'Nos conhecemos no app e hoje estamos noivos! Deus usou a tecnologia para nos unir. Frequentamos a mesma igreja agora e servimos juntos no ministério de louvor.', img: '/images/couple-3.jpg' },
-              { name: 'Rafael & Beatriz', time: 'Juntos há 8 meses', text: 'Frequentávamos igrejas diferentes mas o app nos conectou. Hoje servimos juntos e fazemos devocional diário pelo app. Nossa compatibilidade de fé era 92%!', img: '/images/couple-4.jpg' },
-              { name: 'Daniel & Priscila', time: 'Casados há 6 meses', text: 'Achei que nunca encontraria alguém que compartilhasse meus valores e visão de família. Deus é fiel! O Conexão Divina mudou nossa história.', img: '/images/hero-couple.jpg' },
-            ].map((dep, i) => (
-              <div key={i} className="bg-white p-8 rounded-3xl border-2 border-gray-200 shadow-lg hover:shadow-2xl transition-all">
-                <div className="flex items-center gap-1 mb-6">
-                  {[1,2,3,4,5].map(s => <Star key={s} size={20} className="text-amber-500 fill-amber-500" />)}
-                </div>
-                <p className="text-gray-700 italic mb-6 text-lg leading-relaxed">"{dep.text}"</p>
-                <div className="flex items-center gap-4">
-                  <img src={dep.img} className="w-14 h-14 rounded-full object-cover border-2 border-amber-300" />
-                  <div>
-                    <p className="font-black text-gray-900">{dep.name}</p>
-                    <p className="text-sm text-gray-600">{dep.time}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Seção de depoimentos - será habilitada quando houver depoimentos reais */}
 
       {/* Planos */}
       <section id="planos" className="py-24 px-6 bg-white">
@@ -233,7 +196,7 @@ const LandingPage: React.FC = () => {
       <section className="py-24 px-6 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-6xl font-black mb-6">Pronto para encontrar seu par na fé?</h2>
-          <p className="text-xl mb-10 opacity-90">Junte-se a milhares de cristãos que já encontraram conexões reais e duradouras.</p>
+          <p className="text-xl mb-10 opacity-90">Junte-se à comunidade cristã que busca conexões reais e duradouras.</p>
           <button onClick={handleStart} className="px-12 py-5 bg-white text-amber-600 font-black rounded-2xl hover:scale-110 transition-all shadow-2xl text-xl">
             Criar Minha Conta Grátis
           </button>

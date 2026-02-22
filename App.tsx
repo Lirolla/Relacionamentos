@@ -60,7 +60,7 @@ const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> =
     
     <div className="flex items-center gap-6 mt-12 text-xs text-slate-400">
       <span className="flex items-center gap-1"><Shield size={12}/> Seguro</span>
-      <span className="flex items-center gap-1"><Users size={12}/> +5.000 membros</span>
+      <span className="flex items-center gap-1"><Users size={12}/> Membros verificados</span>
       <span className="flex items-center gap-1"><Church size={12}/> Cristão</span>
     </div>
   </div>
@@ -1033,7 +1033,7 @@ const App: React.FC = () => {
                 </div>
 
                 {/* Estatísticas do Perfil */}
-                <ProfileStats stats={{ views: 127, likes: 43, matches: 12, matchRate: 68, likedBy: 89 }} isPremium={false} onUpgrade={() => setShowPremiumModal(true)} />
+                <ProfileStats stats={{ views: state.currentUser.profile_views || 0, likes: state.currentUser.likes_given || 0, matches: state.matches.length, matchRate: 0, likedBy: state.currentUser.likes_received || 0 }} isPremium={state.currentUser.is_premium || false} onUpgrade={() => setShowPremiumModal(true)} />
 
                 {/* Reputação */}
                 <div className="w-full mt-4">
@@ -1150,7 +1150,7 @@ const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'admin' && <AdminPanel profiles={state.profiles} matches={state.matches} />}
+        {activeTab === 'admin' && <AdminPanel />}
       </main>
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} role={state.currentUser.role} />
