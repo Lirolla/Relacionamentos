@@ -712,7 +712,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Banner Trial */}
-      {!isPaid && trialDaysLeft > 0 && trialDaysLeft <= 7 && isVerified && (
+      {!isPaid && !isAdmin && trialDaysLeft > 0 && trialDaysLeft <= 7 && isVerified && (
         <div className={`px-4 py-2.5 flex items-center justify-between text-sm ${trialDaysLeft <= 2 ? 'bg-red-500 text-white' : 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'}`}>
           <div className="flex items-center gap-2">
             <Clock size={16} />
@@ -1021,10 +1021,12 @@ const App: React.FC = () => {
                   </div>
                 )}
 
-                {/* Botão Premium */}
+                {/* Botão Premium - esconder para admin */}
+                {!isAdmin && (
                 <button onClick={() => setShowPremiumModal(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all">
                   <Crown size={20}/> Seja Premium - R$ 29,90/mês
                 </button>
+                )}
 
                 {/* Galeria de Fotos */}
                 <div className="w-full mt-6">
