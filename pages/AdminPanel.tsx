@@ -124,13 +124,23 @@ const AdminPanel: React.FC = () => {
 
 
 
-  const handleLogin = () => {
-    if (loginUser === 'admin' && loginPass === 'admin123') {
-      localStorage.setItem('admin_token', 'admin-authenticated');
-      setIsAuthenticated(true);
-      setLoginError('');
-    } else {
-      setLoginError('Usuário ou senha incorretos');
+  const handleLogin = async () => {
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginUser, password: loginPass })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('admin_token', data.token || 'admin-authenticated');
+        setIsAuthenticated(true);
+        setLoginError('');
+      } else {
+        setLoginError('Usuário ou senha incorretos');
+      }
+    } catch (err) {
+      setLoginError('Erro ao conectar com o servidor');
     }
   };
 
@@ -220,7 +230,7 @@ const AdminPanel: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Usuário</label>
-              <input type="text" placeholder="admin" value={loginUser} onChange={e => setLoginUser(e.target.value)}
+              <input type="text" placeholder="seu@email.com" value={loginUser} onChange={e => setLoginUser(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none mt-1" />
             </div>
             <div>
