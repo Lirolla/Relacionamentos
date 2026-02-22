@@ -37,7 +37,7 @@ import ProfileDetail from './components/ProfileDetail';
 import { MessageBubble, TypingIndicator, ChatInputBar, EnhancedMessage } from './components/EnhancedChat';
 import OnboardingComplete from './components/OnboardingComplete';
 import InviteSystem, { WaitingApproval } from './components/InviteSystem';
-import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award, Video, Moon, Sun, Mic, Share2, Film, Image } from 'lucide-react';
+import { Heart, MessageSquare, Sparkles, Send, ArrowLeft, Church, ShieldCheck, Star, Camera, Save, MapPin, SlidersHorizontal, Ruler, UserCheck, X, Flag, AlertTriangle, Navigation2, Crown, Settings, LogOut, Bell, Lock, Eye, EyeOff, ChevronRight, Shield, Users, Calendar, BookOpen, Phone, Mail, User, Award, Video, Moon, Sun, Mic, Share2, Film, Image, Clock, CreditCard } from 'lucide-react';
 
 // ===================== TELA DE ENTRADA =====================
 const WelcomeScreen: React.FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLogin, onRegister }) => (
@@ -358,6 +358,43 @@ const App: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [chatMessages, setChatMessages] = useState<EnhancedMessage[]>([]);
 
+  // ===== TRIAL + PAYWALL =====
+  const [trialStartDate] = useState<string | null>(localStorage.getItem('trial_start'));
+  const [isPaid, setIsPaid] = useState(localStorage.getItem('subscription_active') === 'true');
+
+  // Calcular dias restantes do trial
+  const getTrialDaysLeft = (): number => {
+    const start = localStorage.getItem('trial_start');
+    if (!start) return 7;
+    const startDate = new Date(start);
+    const now = new Date();
+    const diffMs = now.getTime() - startDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    return Math.max(0, 7 - diffDays);
+  };
+
+  const trialDaysLeft = getTrialDaysLeft();
+  const isTrialExpired = trialDaysLeft <= 0 && !isPaid;
+  const isVerified = verificationStatus === 'verified' || localStorage.getItem('identity_verified') === 'true';
+
+  // Quando verificação é aprovada, iniciar trial
+  useEffect(() => {
+    if (verificationStatus === 'verified') {
+      localStorage.setItem('identity_verified', 'true');
+      if (!localStorage.getItem('trial_start')) {
+        localStorage.setItem('trial_start', new Date().toISOString());
+      }
+    }
+  }, [verificationStatus]);
+
+  // Carregar status de verificação do localStorage
+  useEffect(() => {
+    const savedVerification = localStorage.getItem('identity_verified');
+    if (savedVerification === 'true') {
+      setVerificationStatus('verified');
+    }
+  }, []);
+
   // Persistir dark mode
   useEffect(() => {
     localStorage.setItem('darkMode', darkMode.toString());
@@ -494,6 +531,109 @@ const App: React.FC = () => {
   if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')} onBack={() => setScreen('welcome')} onForgotPassword={() => setShowForgotPassword(true)} />;
   if (screen === 'register') return <RegisterScreen onRegister={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
 
+  // ===================== TELA DE VERIFICAÇÃO OBRIGATÓRIA =====================
+  if (!isVerified && screen === 'app') return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md text-center">
+        <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/30">
+          <ShieldCheck size={48} className="text-white" />
+        </div>
+        <h1 className="text-3xl font-serif font-bold text-white mb-4">Verificação Obrigatória</h1>
+        <p className="text-slate-400 text-lg mb-3">Para sua segurança e de todos os membros, precisamos verificar sua identidade antes de continuar.</p>
+        <p className="text-slate-500 text-sm mb-10">Tire uma selfie segurando seu documento (RG ou CNH). Nossa equipe analisa em até 24h.</p>
+        
+        {verificationStatus === 'none' && (
+          <button onClick={() => setShowVerification(true)} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-500/30 active:scale-95 transition-all">
+            <ShieldCheck size={22} className="inline mr-3" />Verificar Minha Identidade
+          </button>
+        )}
+        {verificationStatus === 'pending' && (
+          <div className="w-full py-5 bg-yellow-500/20 text-yellow-400 font-bold text-lg rounded-2xl border border-yellow-500/30">
+            <Clock size={22} className="inline mr-3" />Verificação em Análise...
+            <p className="text-yellow-500/70 text-sm font-normal mt-2">Você será notificado quando for aprovado</p>
+          </div>
+        )}
+        {verificationStatus === 'rejected' && (
+          <div>
+            <div className="w-full py-4 bg-red-500/20 text-red-400 font-bold rounded-2xl border border-red-500/30 mb-4">
+              Verificação recusada. Tente novamente.
+            </div>
+            <button onClick={() => { setVerificationStatus('none'); setShowVerification(true); }} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl active:scale-95 transition-all">
+              Tentar Novamente
+            </button>
+          </div>
+        )}
+
+        <button onClick={() => setScreen('welcome')} className="mt-6 text-slate-500 hover:text-slate-400 transition-colors text-sm">
+          <ArrowLeft size={16} className="inline mr-2" />Voltar
+        </button>
+      </div>
+
+      {showVerification && (
+        <IdentityVerification 
+          onClose={() => setShowVerification(false)} 
+          onSubmit={(file) => { 
+            setVerificationStatus('pending'); 
+            setShowVerification(false);
+            // Simular aprovação automática após 3 segundos (remover quando tiver backend)
+            setTimeout(() => {
+              setVerificationStatus('verified');
+              localStorage.setItem('identity_verified', 'true');
+              if (!localStorage.getItem('trial_start')) {
+                localStorage.setItem('trial_start', new Date().toISOString());
+              }
+            }, 3000);
+          }} 
+          status={verificationStatus}
+        />
+      )}
+    </div>
+  );
+
+  // ===================== TELA DE PAYWALL (TRIAL EXPIRADO) =====================
+  if (isTrialExpired && screen === 'app') return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md text-center">
+        <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/30">
+          <Crown size={48} className="text-white" />
+        </div>
+        <h1 className="text-3xl font-serif font-bold text-white mb-4">Seu período grátis acabou</h1>
+        <p className="text-slate-400 text-lg mb-8">Seus 7 dias de teste terminaram. Assine o Conexão Divina Premium para continuar encontrando seu par na fé.</p>
+        
+        <div className="bg-slate-800/50 rounded-3xl p-8 border border-slate-700 mb-8">
+          <div className="text-amber-400 text-sm font-bold uppercase tracking-widest mb-3">Premium Mensal</div>
+          <div className="text-5xl font-black text-white mb-2">R$ 29,90</div>
+          <div className="text-slate-500 mb-6">/mês • cancele quando quiser</div>
+          
+          <div className="space-y-3 text-left mb-8">
+            {['Likes ilimitados', 'Ver quem curtiu você', 'Filtros avançados', 'Destaque no perfil', 'Chat ilimitado', 'Sem anúncios', 'Suporte prioritário'].map(f => (
+              <div key={f} className="flex items-center gap-3">
+                <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-white text-[10px]">✓</div>
+                <span className="text-slate-300 text-sm">{f}</span>
+              </div>
+            ))}
+          </div>
+
+          <button 
+            id="stripe-checkout-btn"
+            onClick={() => {
+              // Quando tiver Stripe configurado, redirecionar para checkout
+              // window.location.href = 'URL_DO_STRIPE_CHECKOUT';
+              alert('Pagamento via Stripe será configurado em breve. Entre em contato com o suporte.');
+            }} 
+            className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-3"
+          >
+            <CreditCard size={22} /> Assinar Agora
+          </button>
+        </div>
+
+        <button onClick={() => setScreen('welcome')} className="text-slate-500 hover:text-slate-400 transition-colors text-sm">
+          <ArrowLeft size={16} className="inline mr-2" />Sair
+        </button>
+      </div>
+    </div>
+  );
+
   // ===================== APP PRINCIPAL =====================
   return (
     <div className={`min-h-screen flex flex-col font-sans selection:bg-amber-100 transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'}`}>
@@ -526,6 +666,19 @@ const App: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Banner Trial */}
+      {!isPaid && trialDaysLeft > 0 && trialDaysLeft <= 7 && isVerified && (
+        <div className={`px-4 py-2.5 flex items-center justify-between text-sm ${trialDaysLeft <= 2 ? 'bg-red-500 text-white' : 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'}`}>
+          <div className="flex items-center gap-2">
+            <Clock size={16} />
+            <span className="font-bold">{trialDaysLeft} {trialDaysLeft === 1 ? 'dia restante' : 'dias restantes'} do teste grátis</span>
+          </div>
+          <button onClick={() => setShowPremiumModal(true)} className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold hover:bg-white/30 transition-all">
+            Assinar
+          </button>
+        </div>
+      )}
 
       <main className="flex-1 relative overflow-hidden pb-20">
         {/* ===================== ABA EXPLORAR ===================== */}
