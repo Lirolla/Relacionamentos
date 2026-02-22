@@ -266,7 +266,7 @@ app.post('/api/admin/churches', async (req, res) => {
     const { name, denomination, pastor, address, city, state, phone, email, members_count, description } = req.body;
     const result = await query(
       'INSERT INTO churches (name, denomination, pastor, address, city, state, phone, email, members_count, description) VALUES (?,?,?,?,?,?,?,?,?,?)',
-      [name, denomination, pastor, address, city, state, phone, email, members_count || 0, description]
+      [name || null, denomination || null, pastor || null, address || null, city || null, state || null, phone || null, email || null, members_count || 0, description || null]
     );
     res.status(201).json({ message: 'Igreja cadastrada', id: result.insertId });
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
@@ -277,7 +277,7 @@ app.put('/api/admin/churches/:id', async (req, res) => {
     const { name, denomination, pastor, address, city, state, phone, email, members_count, description } = req.body;
     await query(
       'UPDATE churches SET name=?, denomination=?, pastor=?, address=?, city=?, state=?, phone=?, email=?, members_count=?, description=? WHERE id=?',
-      [name, denomination, pastor, address, city, state, phone, email, members_count, description, req.params.id]
+      [name || null, denomination || null, pastor || null, address || null, city || null, state || null, phone || null, email || null, members_count || 0, description || null, req.params.id]
     );
     res.json({ message: 'Igreja atualizada' });
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
@@ -319,7 +319,7 @@ app.post('/api/admin/events', async (req, res) => {
     const { title, description, date, time, end_date, location, church_id, category, max_participants, price, is_free } = req.body;
     const result = await query(
       'INSERT INTO events (title, description, date, time, end_date, location, church_id, category, max_participants, price, is_free) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-      [title, description, date, time, end_date, location, church_id, category || 'outro', max_participants || 100, price || 0, is_free ? 1 : 0]
+      [title || null, description || null, date || null, time || null, end_date || null, location || null, church_id || null, category || 'outro', max_participants || 100, price || 0, is_free ? 1 : 0]
     );
     res.status(201).json({ message: 'Evento criado', id: result.insertId });
   } catch (err) { console.error('Erro criar evento:', err.message, err.sql); res.status(500).json({ error: 'Erro interno', detail: err.message }); }
