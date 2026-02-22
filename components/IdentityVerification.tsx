@@ -1,13 +1,36 @@
 import React, { useState, useRef } from 'react';
+
 interface Props { onSubmit: (file: File) => void; onClose: () => void; status: 'none'|'pending'|'verified'|'rejected'; }
 const IdentityVerification: React.FC<Props> = ({ onSubmit, onClose, status }) => {
   const [step, setStep] = useState(status === 'pending' ? 3 : status === 'verified' ? 4 : 0);
   const [preview, setPreview] = useState<string|null>(null);
+  const [checking, setChecking] = useState(false);
+  const [nsfwError, setNsfwError] = useState<string|null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const checkImageNSFW = async (file: File): Promise<{safe: boolean; reason?: string}> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch('/api/check-image', { method: 'POST', body: formData });
+      return await res.json();
+    } catch { return { safe: true }; }
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
+    setNsfwError(null);
+    setChecking(true);
+    const result = await checkImageNSFW(f);
+    setChecking(false);
+    if (!result.safe) {
+      setNsfwError(result.reason || 'Conteúdo impróprio detectado.');
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
     const r = new FileReader(); r.onload = () => { setPreview(r.result as string); setStep(2); }; r.readAsDataURL(f);
   };
+
   const submit = () => { const f = inputRef.current?.files?.[0]; if (f) { onSubmit(f); setStep(3); } };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -16,6 +39,16 @@ const IdentityVerification: React.FC<Props> = ({ onSubmit, onClose, status }) =>
           <h3 className="text-lg font-bold text-gray-800">Verificação de Identidade</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
         </div>
+        {nsfwError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-red-600 text-sm font-medium">🚫 {nsfwError}</p>
+          </div>
+        )}
+        {checking && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <p className="text-blue-600 text-sm font-medium"><span className="animate-spin inline-block">⏳</span> Verificando imagem...</p>
+          </div>
+        )}
         {status === 'verified' ? (
           <div className="text-center py-8"><div className="text-6xl mb-4">✅</div><p className="text-lg font-bold text-green-600">Perfil Verificado!</p><p className="text-gray-500 mt-2">Seu perfil já está verificado.</p></div>
         ) : step === 0 ? (
