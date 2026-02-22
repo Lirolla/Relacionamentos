@@ -35,24 +35,11 @@ interface MockReport {
 }
 
 // ===== DADOS INICIAIS (VAZIOS) =====
-const MOCK_USERS: MockUser[] = [];
-
 const MOCK_SUBSCRIPTIONS: MockSubscription[] = [];
 
-const initialChurches: MockChurch[] = [];
-
-const initialEvents: MockEvent[] = [];
-
-const MOCK_REPORTS: MockReport[] = [];
+const API_BASE = '/api/admin';
 
 // ===== COMPONENTE PRINCIPAL =====
-// Helper para carregar dados do localStorage ou usar default
-const loadData = <T,>(key: string, defaultData: T): T => {
-  try {
-    const saved = localStorage.getItem('admin_' + key);
-    return saved ? JSON.parse(saved) : defaultData;
-  } catch { return defaultData; }
-};
 
 const AdminPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -60,10 +47,11 @@ const AdminPanel: React.FC = () => {
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [users, setUsers] = useState<MockUser[]>(() => loadData('users', []));
-  const [reports, setReports] = useState<MockReport[]>(() => loadData('reports', []));
-  const [churches, setChurches] = useState<MockChurch[]>(() => loadData('churches', []));
-  const [events, setEvents] = useState<MockEvent[]>(() => loadData('events', []));
+  const [users, setUsers] = useState<MockUser[]>([]);
+  const [reports, setReports] = useState<MockReport[]>([]);
+  const [churches, setChurches] = useState<MockChurch[]>([]);
+  const [events, setEvents] = useState<MockEvent[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showCleanConfirm, setShowCleanConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<MockUser | null>(null);
@@ -98,27 +86,41 @@ const AdminPanel: React.FC = () => {
     setConfirmAction(null);
   };
 
-  // Salvar dados no localStorage sempre que mudam
-  useEffect(() => { localStorage.setItem('admin_users', JSON.stringify(users)); }, [users]);
-  useEffect(() => { localStorage.setItem('admin_reports', JSON.stringify(reports)); }, [reports]);
-  useEffect(() => { localStorage.setItem('admin_churches', JSON.stringify(churches)); }, [churches]);
-  useEffect(() => { localStorage.setItem('admin_events', JSON.stringify(events)); }, [events]);
+  // Carregar dados do banco quando autenticado
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [usersRes, churchesRes, eventsRes, reportsRes] = await Promise.all([
+        fetch('/api/admin/users').then(r => r.json()).catch(() => []),
+        fetch('/api/admin/churches').then(r => r.json()).catch(() => []),
+        fetch('/api/admin/events').then(r => r.json()).catch(() => []),
+        fetch('/api/admin/reports').then(r => r.json()).catch(() => []),
+      ]);
+      setUsers(Array.isArray(usersRes) ? usersRes : []);
+      setChurches(Array.isArray(churchesRes) ? churchesRes : []);
+      setEvents(Array.isArray(eventsRes) ? eventsRes : []);
+      setReports(Array.isArray(reportsRes) ? reportsRes : []);
+    } catch (e) { console.error('Erro ao carregar dados:', e); }
+    finally { setLoading(false); }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
-    if (token) setIsAuthenticated(true);
+    if (token) {
+      setIsAuthenticated(true);
+    }
   }, []);
 
-  // Limpar TODOS os dados (zerar para producao)
+  useEffect(() => {
+    if (isAuthenticated) fetchData();
+  }, [isAuthenticated]);
+
+  // Limpar TODOS os dados
   const handleCleanAllData = () => {
     setUsers([]);
     setChurches([]);
     setEvents([]);
     setReports([]);
-    localStorage.removeItem('admin_users');
-    localStorage.removeItem('admin_reports');
-    localStorage.removeItem('admin_churches');
-    localStorage.removeItem('admin_events');
     setShowCleanConfirm(false);
   };
 
@@ -150,15 +152,23 @@ const AdminPanel: React.FC = () => {
   };
 
   // CRUD Igrejas
-  const handleSaveChurch = () => {
+  const handleSaveChurch = async () => {
     if (!churchForm.name || !churchForm.denomination || !churchForm.city) return;
-    if (editingChurch) {
-      setChurches(prev => prev.map(c => c.id === editingChurch.id ? { ...c, ...churchForm, members: c.members, verified: c.verified } : c));
-      setEditingChurch(null);
-    } else {
-      const newChurch: MockChurch = { id: String(Date.now()), ...churchForm, members: 0, verified: false };
-      setChurches(prev => [...prev, newChurch]);
-    }
+    try {
+      if (editingChurch) {
+        await fetch(`${API_BASE}/churches/${editingChurch.id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(churchForm)
+        });
+        setEditingChurch(null);
+      } else {
+        await fetch(`${API_BASE}/churches`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(churchForm)
+        });
+      }
+      await fetchData();
+    } catch (e) { console.error('Erro ao salvar igreja:', e); }
     setChurchForm({ name: '', denomination: '', city: '', state: '', pastor: '', phone: '', address: '', email: '' });
     setShowCreateChurch(false);
   };
@@ -169,26 +179,42 @@ const AdminPanel: React.FC = () => {
     setShowCreateChurch(true);
   };
 
-  const handleDeleteChurch = (id: string) => {
+  const handleDeleteChurch = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta igreja?')) {
-      setChurches(prev => prev.filter(c => c.id !== id));
+      try {
+        await fetch(`${API_BASE}/churches/${id}`, { method: 'DELETE' });
+        await fetchData();
+      } catch (e) { console.error('Erro ao excluir igreja:', e); }
     }
   };
 
-  const handleVerifyChurch = (id: string) => {
-    setChurches(prev => prev.map(c => c.id === id ? { ...c, verified: !c.verified } : c));
+  const handleVerifyChurch = async (id: string) => {
+    try {
+      const church = churches.find(c => c.id === id);
+      const endpoint = church?.verified ? 'unverify' : 'verify';
+      await fetch(`${API_BASE}/churches/${id}/${endpoint}`, { method: 'PUT' });
+      await fetchData();
+    } catch (e) { console.error('Erro ao verificar igreja:', e); }
   };
 
   // CRUD Eventos
-  const handleSaveEvent = () => {
+  const handleSaveEvent = async () => {
     if (!eventForm.title || !eventForm.date || !eventForm.location) return;
-    if (editingEvent) {
-      setEvents(prev => prev.map(e => e.id === editingEvent.id ? { ...e, ...eventForm, maxAttendees: parseInt(eventForm.maxAttendees), attendees: e.attendees } : e));
-      setEditingEvent(null);
-    } else {
-      const newEvent: MockEvent = { id: String(Date.now()), ...eventForm, attendees: 0, maxAttendees: parseInt(eventForm.maxAttendees), status: 'active' };
-      setEvents(prev => [...prev, newEvent]);
-    }
+    try {
+      if (editingEvent) {
+        await fetch(`${API_BASE}/events/${editingEvent.id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...eventForm, max_attendees: parseInt(eventForm.maxAttendees) })
+        });
+        setEditingEvent(null);
+      } else {
+        await fetch(`${API_BASE}/events`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...eventForm, max_attendees: parseInt(eventForm.maxAttendees) })
+        });
+      }
+      await fetchData();
+    } catch (e) { console.error('Erro ao salvar evento:', e); }
     setEventForm({ title: '', church: '', date: '', time: '', location: '', type: 'Culto', description: '', maxAttendees: '100' });
     setShowCreateEvent(false);
   };
@@ -199,19 +225,33 @@ const AdminPanel: React.FC = () => {
     setShowCreateEvent(true);
   };
 
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este evento?')) {
-      setEvents(prev => prev.filter(e => e.id !== id));
+      try {
+        await fetch(`${API_BASE}/events/${id}`, { method: 'DELETE' });
+        await fetchData();
+      } catch (e) { console.error('Erro ao excluir evento:', e); }
     }
   };
 
-  const handleToggleEventStatus = (id: string) => {
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, status: e.status === 'active' ? 'canceled' : 'active' } : e));
+  const handleToggleEventStatus = async (id: string) => {
+    try {
+      await fetch(`${API_BASE}/events/${id}/toggle`, { method: 'PUT' });
+      await fetchData();
+    } catch (e) { console.error('Erro ao alterar status:', e); }
   };
 
   // Verificação de usuário
-  const handleVerifyUser = (userId: string, action: 'verified' | 'rejected') => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, verificationStatus: action } : u));
+  const handleVerifyUser = async (userId: string, action: 'verified' | 'rejected') => {
+    try {
+      await fetch(`/api/admin/users/${userId}/verify`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: action })
+      });
+      await fetchData();
+    } catch (e) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, verificationStatus: action } : u));
+    }
   };
 
   // ===== TELA DE LOGIN =====

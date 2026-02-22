@@ -193,8 +193,21 @@ app.get('/api/admin/stats', async (req, res) => {
 // =====================================================
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const rows = await query('SELECT id, name, email, gender, denomination, church_name, city, state, is_premium, is_active, is_blocked, verification_status, role, created_at FROM users ORDER BY created_at DESC', []);
-    res.json(rows);
+    const rows = await query('SELECT id, name, email, birth_date, gender, denomination, church_name, city, state, is_premium, is_active, is_blocked, verification_status, role, created_at, last_seen, likes_received, profile_views, bio, reputation_score FROM users ORDER BY created_at DESC', []);
+    const mapped = rows.map(r => {
+      const age = r.birth_date ? Math.floor((Date.now() - new Date(r.birth_date).getTime()) / 31557600000) : 0;
+      return {
+        id: String(r.id), name: r.name || '', email: r.email || '', age,
+        gender: r.gender || '', church: r.church_name || '', denomination: r.denomination || '',
+        location: (r.city && r.state) ? `${r.city}, ${r.state}` : (r.city || r.state || ''),
+        status: r.is_blocked ? 'blocked' : (r.is_active ? 'active' : 'inactive'),
+        isPremium: !!r.is_premium, createdAt: r.created_at || '', lastLogin: r.last_seen || '',
+        avatar: '', photos: [], bio: r.bio || '', phone: '',
+        verificationStatus: r.verification_status || 'none',
+        matchCount: 0, reportCount: 0
+      };
+    });
+    res.json(mapped);
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
@@ -249,7 +262,12 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 app.get('/api/admin/churches', async (req, res) => {
   try {
     const rows = await query('SELECT * FROM churches ORDER BY created_at DESC', []);
-    res.json(rows);
+    const mapped = rows.map(r => ({
+      id: String(r.id), name: r.name || '', denomination: r.denomination || '', city: r.city || '',
+      state: r.state || '', members: r.members_count || 0, verified: !!r.is_verified,
+      pastor: r.pastor || '', phone: r.phone || '', address: r.address || '', email: r.email || ''
+    }));
+    res.json(mapped);
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
@@ -309,17 +327,33 @@ app.delete('/api/admin/churches/:id', async (req, res) => {
 // =====================================================
 app.get('/api/admin/events', async (req, res) => {
   try {
-    const rows = await query('SELECT * FROM events ORDER BY date DESC', []);
-    res.json(rows);
+    const rows = await query(`SELECT e.*, c.name as church_name FROM events e LEFT JOIN churches c ON e.church_id = c.id ORDER BY e.date DESC`, []);
+    const mapped = rows.map(r => ({
+      id: String(r.id), title: r.title || '', church: r.church_name || '', date: r.date ? new Date(r.date).toISOString().split('T')[0] : '',
+      time: r.time || '', location: r.location || '', attendees: r.current_participants || 0,
+      type: r.category || 'outro', description: r.description || '', maxAttendees: r.max_participants || 100,
+      status: r.is_active ? 'active' : 'canceled'
+    }));
+    res.json(mapped);
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
 app.post('/api/admin/events', async (req, res) => {
   try {
-    const { title, description, date, time, end_date, location, church_id, category, max_participants, price, is_free } = req.body;
+    const { title, description, date, time, end_date, location, church_id, church, category, type, max_participants, max_attendees, price, is_free } = req.body;
+    // Resolver church_id a partir do nome da igreja se necessário
+    let resolvedChurchId = church_id || null;
+    if (!resolvedChurchId && church) {
+      const found = await query('SELECT id FROM churches WHERE name = ? LIMIT 1', [church]);
+      if (found.length > 0) resolvedChurchId = found[0].id;
+    }
+    // Mapear tipo para categoria do banco
+    const typeMap = { 'Culto': 'culto', 'Retiro': 'retiro', 'Conferência': 'conferencia', 'Jantar': 'jantar', 'Estudo Bíblico': 'estudo_biblico', 'Louvor': 'culto', 'Encontro de Solteiros': 'social', 'Workshop': 'outro' };
+    const resolvedCategory = category || typeMap[type] || 'outro';
+    const resolvedMax = max_participants || max_attendees || 100;
     const result = await query(
       'INSERT INTO events (title, description, date, time, end_date, location, church_id, category, max_participants, price, is_free) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-      [title || null, description || null, date || null, time || null, end_date || null, location || null, church_id || null, category || 'outro', max_participants || 100, price || 0, is_free ? 1 : 0]
+      [title || null, description || null, date || null, time || null, end_date || null, location || null, resolvedChurchId, resolvedCategory, resolvedMax, price || 0, is_free !== undefined ? (is_free ? 1 : 0) : 1]
     );
     res.status(201).json({ message: 'Evento criado', id: result.insertId });
   } catch (err) { console.error('Erro criar evento:', err.message, err.sql); res.status(500).json({ error: 'Erro interno', detail: err.message }); }
@@ -354,7 +388,13 @@ app.delete('/api/admin/events/:id', async (req, res) => {
 app.get('/api/admin/reports', async (req, res) => {
   try {
     const rows = await query('SELECT r.*, u1.name as reporter_name, u2.name as reported_name FROM reports r LEFT JOIN users u1 ON r.reporter_id = u1.id LEFT JOIN users u2 ON r.reported_user_id = u2.id ORDER BY r.created_at DESC', []);
-    res.json(rows);
+    const mapped = rows.map(r => ({
+      id: String(r.id), reporterName: r.reporter_name || 'Anônimo', reportedName: r.reported_name || 'Desconhecido',
+      reportedId: String(r.reported_user_id), reportedAvatar: '', reason: r.reason || '',
+      description: r.description || '', date: r.created_at || '', status: r.status || 'pending',
+      reporterAvatar: ''
+    }));
+    res.json(mapped);
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
