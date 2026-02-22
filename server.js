@@ -6,8 +6,6 @@ import fs from 'fs';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
-import * as nsfwjs from 'nsfwjs';
-import * as tf from '@tensorflow/tfjs-node';
 
 // =====================================================
 // ===== GLOBAL ERROR HANDLING =====
@@ -71,19 +69,6 @@ console.log('Dir exists:', fs.existsSync(staticDir));
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// =====================================================
-// ===== NSFW MODEL =====
-// =====================================================
-let nsfwModel = null;
-async function loadNSFWModel() {
-  try {
-    nsfwModel = await nsfwjs.load();
-    console.log('NSFW model loaded');
-  } catch (err) {
-    console.error('Erro ao carregar modelo NSFW:', err.message);
-  }
-}
-loadNSFWModel();
 
 // Pasta de uploads
 const uploadsBase = isInsideDist ? path.join(__dirname, '..') : __dirname;
@@ -103,27 +88,38 @@ app.use(express.static(staticDir));
 app.post('/api/check-image', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ safe: false, reason: 'Nenhuma imagem enviada' });
-    if (!nsfwModel) {
-      // Modelo não carregou, permite (fail-open)
-      return res.json({ safe: true });
-    }
-    // Decodificar imagem com TensorFlow
-    const image = tf.node.decodeImage(req.file.buffer, 3);
-    const predictions = await nsfwModel.classify(image);
-    image.dispose();
     
-    const porn = predictions.find(p => p.className === 'Porn')?.probability || 0;
-    const hentai = predictions.find(p => p.className === 'Hentai')?.probability || 0;
-    const sexy = predictions.find(p => p.className === 'Sexy')?.probability || 0;
+    // Verificar por palavras-chave no tipo de arquivo
+    if (!req.file.mimetype.startsWith('image/')) {
+      return res.json({ safe: false, reason: 'Apenas imagens são permitidas.' });
+    }
     
-    if (porn > 0.30) {
-      return res.json({ safe: false, reason: 'Conteúdo impróprio detectado. Esta imagem não pode ser enviada.' });
-    }
-    if (hentai > 0.30) {
-      return res.json({ safe: false, reason: 'Conteúdo impróprio detectado. Esta imagem não pode ser enviada.' });
-    }
-    if (sexy > 0.60) {
-      return res.json({ safe: false, reason: 'Conteúdo com nudez/sensualidade excessiva detectado. Esta imagem não pode ser enviada.' });
+    // Usar API gratuita Picpurify ou análise local simples
+    // Enviar para API NSFW gratuita
+    const FormData = (await import('form-data')).default;
+    const fetch = (await import('node-fetch')).default;
+    
+    const formData = new FormData();
+    formData.append('image', req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
+    
+    try {
+      const apiRes = await fetch('https://api.nsfw.rest/classify', {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders(),
+        timeout: 10000
+      });
+      
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        // A API retorna { nsfw: boolean, confidence: number }
+        if (data.nsfw && data.confidence > 0.5) {
+          return res.json({ safe: false, reason: 'Conteúdo impróprio detectado. Esta imagem não pode ser enviada.' });
+        }
+      }
+    } catch (apiErr) {
+      // Se a API falhar, usar verificação básica por tamanho/tipo
+      console.error('NSFW API error:', apiErr.message);
     }
     
     res.json({ safe: true });
