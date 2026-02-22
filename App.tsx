@@ -4,7 +4,7 @@ import { INITIAL_STATE } from './constants';
 import { Profile, Match, UserRole, Message, AppFilters } from './types';
 import Navigation from './components/Navigation';
 import SwipeCard from './components/SwipeCard';
-import AdminPanel from './components/AdminPanel';
+// AdminPanel removido do app - acessar via /admin
 import Onboarding from './components/Onboarding';
 import IdentityVerification from './components/IdentityVerification';
 import Stories from './components/Stories';
@@ -287,7 +287,7 @@ const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [screen, setScreen] = useState<'welcome' | 'login' | 'register' | 'app'>('welcome');
   const [state, setState] = useState(INITIAL_STATE);
-  const [activeTab, setActiveTab] = useState<'swipe' | 'chat' | 'profile' | 'admin' | 'favorites' | 'community' | 'prayer'>('swipe');
+  const [activeTab, setActiveTab] = useState<'swipe' | 'chat' | 'profile' | 'favorites' | 'community' | 'prayer'>('swipe');
   const [activeChat, setActiveChat] = useState<Match | null>(null);
   const [matchModal, setMatchModal] = useState<Profile | null>(null);
   const [showFilter, setShowFilter] = useState(false);
@@ -1150,7 +1150,7 @@ const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'admin' && <AdminPanel />}
+
       </main>
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} role={state.currentUser.role} />

@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { Heart, MessageCircle, User, LayoutDashboard, Flame, Star, Users, BookOpen } from 'lucide-react';
+import { Heart, MessageCircle, User, Flame, Users, BookOpen } from 'lucide-react';
 import { UserRole } from '../types';
 
 interface NavigationProps {
-  activeTab: 'swipe' | 'chat' | 'profile' | 'admin' | 'favorites' | 'community' | 'prayer';
+  activeTab: 'swipe' | 'chat' | 'profile' | 'favorites' | 'community' | 'prayer';
   setActiveTab: (tab: any) => void;
   role: UserRole;
 }
@@ -43,16 +43,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, role }
         <MessageCircle size={20} />
         <span className="text-[8px] font-bold uppercase tracking-tight">Chat</span>
       </button>
-
-      {role === UserRole.ADMIN && (
-        <button 
-          onClick={() => setActiveTab('admin')}
-          className={`flex flex-col items-center gap-0.5 transition-colors flex-1 ${activeTab === 'admin' ? 'text-amber-600' : 'text-slate-400'}`}
-        >
-          <LayoutDashboard size={20} />
-          <span className="text-[8px] font-bold uppercase tracking-tight">Gestão</span>
-        </button>
-      )}
 
       <button 
         onClick={() => setActiveTab('profile')}
