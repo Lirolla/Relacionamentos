@@ -3,6 +3,40 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import mysql from 'mysql2/promise';
+
+// =====================================================
+// ===== CONEXÃO MYSQL - HOSTINGER =====
+// =====================================================
+const dbConfig = {
+  host: 'localhost',
+  user: 'u219024948_cristo',
+  password: 'Pagotto24',
+  database: 'u219024948_cristo',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  charset: 'utf8mb4'
+};
+
+let pool;
+try {
+  pool = mysql.createPool(dbConfig);
+  console.log('✅ Pool de conexão MySQL criado com sucesso');
+} catch (err) {
+  console.error('❌ Erro ao criar pool MySQL:', err.message);
+}
+
+// Função helper para queries
+async function query(sql, params) {
+  try {
+    const [rows] = await pool.execute(sql, params);
+    return rows;
+  } catch (err) {
+    console.error('❌ Erro na query:', err.message);
+    throw err;
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
