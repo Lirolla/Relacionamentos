@@ -4,6 +4,7 @@ interface Props { onSubmit: (file: File) => void; onClose: () => void; status: '
 const IdentityVerification: React.FC<Props> = ({ onSubmit, onClose, status }) => {
   const [step, setStep] = useState(status === 'pending' ? 3 : status === 'verified' ? 4 : 0);
   const [preview, setPreview] = useState<string|null>(null);
+  const [selectedFile, setSelectedFile] = useState<File|null>(null);
   const [checking, setChecking] = useState(false);
   const [nsfwError, setNsfwError] = useState<string|null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,10 +29,17 @@ const IdentityVerification: React.FC<Props> = ({ onSubmit, onClose, status }) =>
       if (inputRef.current) inputRef.current.value = '';
       return;
     }
+    setSelectedFile(f);
     const r = new FileReader(); r.onload = () => { setPreview(r.result as string); setStep(2); }; r.readAsDataURL(f);
   };
 
-  const submit = () => { const f = inputRef.current?.files?.[0]; if (f) { onSubmit(f); setStep(3); } };
+  const submit = () => { 
+    if (selectedFile) { 
+      onSubmit(selectedFile); 
+      setStep(3); 
+    } 
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
@@ -75,7 +83,7 @@ const IdentityVerification: React.FC<Props> = ({ onSubmit, onClose, status }) =>
           <div className="text-center py-4">
             {preview && <img src={preview} alt="" className="w-full aspect-square object-cover rounded-xl mb-4"/>}
             <div className="flex gap-3">
-              <button onClick={()=>setStep(1)} className="flex-1 py-3 border border-gray-300 rounded-xl">Refazer</button>
+              <button onClick={()=>{ setStep(1); setSelectedFile(null); setPreview(null); }} className="flex-1 py-3 border border-gray-300 rounded-xl">Refazer</button>
               <button onClick={submit} className="flex-1 py-3 bg-purple-600 text-white rounded-xl font-semibold">Enviar</button>
             </div>
           </div>
