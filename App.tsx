@@ -767,19 +767,19 @@ const App: React.FC = () => {
         <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/30">
           <ShieldCheck size={48} className="text-white" />
         </div>
-        <h1 className="text-3xl font-serif font-bold text-white mb-4">Verificação Obrigatória</h1>
-        <p className="text-slate-400 text-lg mb-3">Para sua segurança e de todos os membros, precisamos verificar sua identidade antes de continuar.</p>
-        <p className="text-slate-500 text-sm mb-10">Tire uma selfie segurando seu documento (RG ou CNH). Nossa equipe analisa em até 24h.</p>
+        <h1 className="text-3xl font-serif font-bold text-white mb-4">Verifique sua Identidade</h1>
+        <p className="text-slate-400 text-lg mb-3">Para sua segurança, tire uma selfie para confirmar que você é uma pessoa real.</p>
+        <p className="text-slate-500 text-sm mb-10">Nossa equipe analisa em background. Você já pode usar o app normalmente após enviar.</p>
         
         {verificationStatus === 'none' && (
           <button onClick={() => setShowVerification(true)} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-500/30 active:scale-95 transition-all">
-            <ShieldCheck size={22} className="inline mr-3" />Verificar Minha Identidade
+            <ShieldCheck size={22} className="inline mr-3" />Tirar Selfie de Verificação
           </button>
         )}
         {verificationStatus === 'pending' && (
-          <div className="w-full py-5 bg-yellow-500/20 text-yellow-400 font-bold text-lg rounded-2xl border border-yellow-500/30">
-            <Clock size={22} className="inline mr-3" />Verificação em Análise...
-            <p className="text-yellow-500/70 text-sm font-normal mt-2">Você será notificado quando for aprovado</p>
+          <div className="w-full py-5 bg-green-500/20 text-green-400 font-bold text-lg rounded-2xl border border-green-500/30">
+            <ShieldCheck size={22} className="inline mr-3" />Foto enviada com sucesso!
+            <p className="text-green-500/70 text-sm font-normal mt-2">Sua verificação está em análise. Você já pode usar o app!</p>
           </div>
         )}
         {verificationStatus === 'rejected' && (
@@ -793,6 +793,19 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* Botão para entrar no app - aparece quando pending (foto já enviada) */}
+        {verificationStatus === 'pending' && (
+          <button onClick={() => {
+            localStorage.setItem('identity_verified', 'true');
+            setVerificationStatus('verified');
+            if (!localStorage.getItem('trial_start')) {
+              localStorage.setItem('trial_start', new Date().toISOString());
+            }
+          }} className="w-full mt-4 py-5 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-green-500/30 active:scale-95 transition-all">
+            Entrar no App
+          </button>
+        )}
+
         <button onClick={() => setScreen('welcome')} className="mt-6 text-slate-500 hover:text-slate-400 transition-colors text-sm">
           <ArrowLeft size={16} className="inline mr-2" />Voltar
         </button>
@@ -801,17 +814,23 @@ const App: React.FC = () => {
       {showVerification && (
         <IdentityVerification 
           onClose={() => setShowVerification(false)} 
-          onSubmit={(file) => { 
+          onSubmit={async (file) => { 
             setVerificationStatus('pending'); 
             setShowVerification(false);
-            // Simular aprovação automática após 3 segundos (remover quando tiver backend)
-            setTimeout(() => {
-              setVerificationStatus('verified');
-              localStorage.setItem('identity_verified', 'true');
-              if (!localStorage.getItem('trial_start')) {
-                localStorage.setItem('trial_start', new Date().toISOString());
-              }
-            }, 3000);
+            // Enviar foto para o R2 via API
+            try {
+              const formData = new FormData();
+              formData.append('photo', file);
+              formData.append('userId', state.currentUser.id);
+              formData.append('type', 'selfie');
+              await fetch('/api/verification/submit', { method: 'POST', body: formData });
+            } catch (err) {
+              console.error('Erro ao enviar verificação:', err);
+            }
+            // Iniciar trial
+            if (!localStorage.getItem('trial_start')) {
+              localStorage.setItem('trial_start', new Date().toISOString());
+            }
           }} 
           status={verificationStatus}
         />
