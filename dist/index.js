@@ -1262,7 +1262,8 @@ app.get('/api/debug/tables', async (req, res) => {
 
 app.get('/api/debug/columns/:table', async (req, res) => {
   try {
-    const cols = await query('SHOW COLUMNS FROM ??', [req.params.table]);
+    const tableName = req.params.table.replace(/[^a-zA-Z0-9_]/g, '');
+    const cols = await query(`SHOW COLUMNS FROM ${tableName}`, []);
     res.json({ columns: cols });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
