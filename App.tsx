@@ -515,6 +515,14 @@ const App: React.FC = () => {
         const profile = mapUserToProfile(user);
         setState(prev => ({ ...prev, currentUser: profile }));
         loadUserPhotos(String(user.id));
+        // Restaurar admin e verificação
+        if (user.role === 'admin' || localStorage.getItem('is_admin') === 'true') {
+          setIsAdmin(true);
+          setVerificationStatus('verified');
+          setState(prev => ({ ...prev, currentUser: { ...profile, role: UserRole.ADMIN } }));
+        } else if (user.verification_status === 'verified' || localStorage.getItem('identity_verified') === 'true') {
+          setVerificationStatus('verified');
+        }
         setScreen('app');
       } catch (err) { console.error('Erro ao restaurar sessão:', err); }
     }
@@ -522,21 +530,7 @@ const App: React.FC = () => {
 
   // Login handler
   const handleLogin = (email: string, password: string) => {
-    // Admin geral - bypass total
-    if (email === 'contato@lirolla.com' && password === 'Pagotto24') {
-      localStorage.setItem('is_admin', 'true');
-      localStorage.setItem('identity_verified', 'true');
-      setIsAdmin(true);
-      setVerificationStatus('verified');
-      setState(prev => ({
-        ...prev,
-        currentUser: { ...prev.currentUser, name: 'Admin', role: UserRole.ADMIN }
-      }));
-      setScreen('app');
-      setActiveTab('swipe');
-      return;
-    }
-    // Login normal - o LoginScreen já salvou os dados no localStorage
+    // O LoginScreen já chamou a API e salvou user_data no localStorage
     const savedUserData = localStorage.getItem('user_data');
     if (savedUserData) {
       try {
@@ -544,13 +538,25 @@ const App: React.FC = () => {
         const profile = mapUserToProfile(user);
         setState(prev => ({ ...prev, currentUser: profile }));
         loadUserPhotos(String(user.id));
-        if (user.verification_status === 'verified' || user.video_verification_status === 'verified') {
+        
+        // Verificar se é admin
+        if (user.role === 'admin' || email === 'contato@lirolla.com') {
+          localStorage.setItem('is_admin', 'true');
+          localStorage.setItem('identity_verified', 'true');
+          setIsAdmin(true);
+          setVerificationStatus('verified');
+          setState(prev => ({
+            ...prev,
+            currentUser: { ...profile, name: user.name || 'Admin', role: UserRole.ADMIN }
+          }));
+        } else if (user.verification_status === 'verified' || user.video_verification_status === 'verified') {
           setVerificationStatus('verified');
           localStorage.setItem('identity_verified', 'true');
         }
       } catch (err) { console.error('Erro ao processar login:', err); }
     }
     setScreen('app');
+    setActiveTab('swipe');
   };
 
   // Quando verificação é aprovada, iniciar trial
@@ -600,6 +606,15 @@ const App: React.FC = () => {
             ...prev,
             currentUser: { ...prev.currentUser, coordinates: loc }
           }));
+          // Enviar localização ao banco
+          const uid = localStorage.getItem('user_id');
+          if (uid) {
+            fetch(`/api/users/${uid}/location`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ latitude: loc.lat, longitude: loc.lng })
+            }).catch(() => {});
+          }
         },
         () => {
           setLocationStatus('denied');
