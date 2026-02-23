@@ -148,7 +148,7 @@ const LoginScreen: React.FC<{ onLogin: (email: string, password: string) => void
 const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> = ({ onRegister, onBack }) => {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    name: '', age: '', email: '', password: '',
+    name: '', birthDate: '', email: '', password: '',
     denomination: '', churchName: '', churchRole: '',
     location: '', bio: '', faithJourney: '',
     gender: '', maritalStatus: 'Solteiro(a)', hasChildren: false
@@ -169,7 +169,8 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
           password: form.password,
           gender: form.gender === 'Masculino' ? 'male' : 'female',
           denomination: form.denomination,
-          churchName: form.churchName
+          churchName: form.churchName,
+          birthDate: form.birthDate
         })
       });
       const data = await res.json();
@@ -188,8 +189,9 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
             bio: form.bio,
             faith_journey: form.faithJourney,
             city: form.location,
-            marital_status: form.maritalStatus === 'Divorciado(a)' ? 'divorced' : form.maritalStatus === 'Viúvo(a)' ? 'widowed' : 'single',
-            has_children: form.hasChildren ? 1 : 0
+            marital_status: form.maritalStatus === 'Divorciado(a)' ? 'divorced' : form.maritalStatus === 'Vi\u00favo(a)' ? 'widowed' : 'single',
+            has_children: form.hasChildren ? 1 : 0,
+            birth_date: form.birthDate
           })
         });
       }
@@ -228,8 +230,8 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Idade</label>
-                  <input type="number" value={form.age} onChange={e => setForm({...form, age: e.target.value})} placeholder="25" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Data de Nascimento</label>
+                  <input type="date" value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Gênero</label>
@@ -1243,7 +1245,7 @@ const App: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Idade</label>
-                      <input type="number" value={editForm.age} onChange={e => setEditForm({...editForm, age: parseInt(e.target.value)})} className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none shadow-sm" />
+                      <p className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium text-slate-600">{editForm.age} anos</p>
                     </div>
                   </div>
                   <div className="space-y-2">

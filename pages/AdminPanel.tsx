@@ -8,6 +8,7 @@ interface MockUser {
   isPremium: boolean; createdAt: string; lastLogin: string;
   avatar: string; photos: string[]; bio: string; phone: string;
   verificationStatus: 'none' | 'pending' | 'verified' | 'rejected';
+  verificationPhoto: string; birthDate: string;
   matchCount: number; reportCount: number;
 }
 
@@ -612,11 +613,17 @@ const AdminPanel: React.FC = () => {
               </div>
               <div className="px-6 pb-6 -mt-12">
                 <div className="flex items-end gap-4 mb-4">
-                  <img src={selectedUser.avatar} className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg" />
+                  {selectedUser.avatar ? (
+                    <img src={selectedUser.avatar} className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg" />
+                  ) : (
+                    <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center">
+                      <Users size={32} className="text-gray-400" />
+                    </div>
+                  )}
                   <div className="pb-1">
                     <h2 className="text-xl font-bold text-gray-800">{selectedUser.name}</h2>
                     <p className="text-gray-500 text-sm">{selectedUser.email}</p>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-2 mt-1 flex-wrap">
                       {selectedUser.isPremium && <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PREMIUM</span>}
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${selectedUser.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {selectedUser.status === 'active' ? 'ATIVO' : 'BLOQUEADO'}
@@ -629,50 +636,81 @@ const AdminPanel: React.FC = () => {
                       }`}>
                         {selectedUser.verificationStatus === 'verified' ? 'VERIFICADO' :
                          selectedUser.verificationStatus === 'pending' ? 'PENDENTE' :
-                         selectedUser.verificationStatus === 'rejected' ? 'REJEITADO' : 'NÃO VERIFICADO'}
+                         selectedUser.verificationStatus === 'rejected' ? 'REJEITADO' : 'NAO VERIFICADO'}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Bio */}
-                <div className="bg-gray-50 p-4 rounded-xl mb-4">
-                  <p className="text-sm text-gray-600 italic">"{selectedUser.bio}"</p>
-                </div>
-
-                {/* Info Grid */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Idade</p><p className="font-bold text-gray-800 text-sm">{selectedUser.age} anos</p></div>
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Gênero</p><p className="font-bold text-gray-800 text-sm">{selectedUser.gender}</p></div>
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Igreja</p><p className="font-bold text-gray-800 text-sm">{selectedUser.church}</p></div>
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Denominação</p><p className="font-bold text-gray-800 text-sm">{selectedUser.denomination}</p></div>
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Localização</p><p className="font-bold text-gray-800 text-sm">{selectedUser.location}</p></div>
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Telefone</p><p className="font-bold text-gray-800 text-sm">{selectedUser.phone}</p></div>
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Cadastro</p><p className="font-bold text-gray-800 text-sm">{selectedUser.createdAt}</p></div>
-                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Matches</p><p className="font-bold text-gray-800 text-sm">{selectedUser.matchCount}</p></div>
-                </div>
-
-                {/* Fotos do Usuário */}
-                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Image size={16} /> Fotos do Usuário</h3>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {selectedUser.photos.map((photo, i) => (
-                    <img key={i} src={photo} className="w-full aspect-square rounded-xl object-cover" />
-                  ))}
-                </div>
-
-                {/* Denúncias */}
-                {selectedUser.reportCount > 0 && (
-                  <div className="bg-red-50 p-3 rounded-xl mb-4">
-                    <p className="text-sm text-red-600 font-bold flex items-center gap-2"><Flag size={14} /> {selectedUser.reportCount} denúncia(s) recebida(s)</p>
+                {/* Foto de Verificacao */}
+                {selectedUser.verificationPhoto && (
+                  <div className="mb-4">
+                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Selfie de Verificacao</h3>
+                    <div className="bg-gray-50 p-3 rounded-xl">
+                      <img src={selectedUser.verificationPhoto} className="w-full max-h-64 object-contain rounded-xl" />
+                    </div>
+                  </div>
+                )}
+                {selectedUser.verificationStatus === 'pending' && !selectedUser.verificationPhoto && (
+                  <div className="bg-yellow-50 p-3 rounded-xl mb-4">
+                    <p className="text-sm text-yellow-700 font-bold flex items-center gap-2"><AlertTriangle size={14} /> Verificacao pendente - selfie nao encontrada no R2</p>
                   </div>
                 )}
 
-                {/* Ações */}
+                {/* Bio */}
+                {selectedUser.bio && (
+                  <div className="bg-gray-50 p-4 rounded-xl mb-4">
+                    <p className="text-sm text-gray-600 italic">"{selectedUser.bio}"</p>
+                  </div>
+                )}
+
+                {/* Info Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Data de Nascimento</p>
+                    <p className="font-bold text-gray-800 text-sm">
+                      {selectedUser.birthDate ? new Date(selectedUser.birthDate).toLocaleDateString('pt-BR') : 'Nao informado'}
+                    </p>
+                    {selectedUser.birthDate && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">{selectedUser.age} anos</p>
+                    )}
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Genero</p><p className="font-bold text-gray-800 text-sm">{selectedUser.gender === 'male' ? 'Masculino' : selectedUser.gender === 'female' ? 'Feminino' : selectedUser.gender}</p></div>
+                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Igreja</p><p className="font-bold text-gray-800 text-sm">{selectedUser.church || 'Nao informado'}</p></div>
+                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Denominacao</p><p className="font-bold text-gray-800 text-sm">{selectedUser.denomination || 'Nao informado'}</p></div>
+                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Localizacao</p><p className="font-bold text-gray-800 text-sm">{selectedUser.location || 'Nao informado'}</p></div>
+                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Telefone</p><p className="font-bold text-gray-800 text-sm">{selectedUser.phone || 'Nao informado'}</p></div>
+                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Cadastro</p><p className="font-bold text-gray-800 text-sm">{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('pt-BR') : ''}</p></div>
+                  <div className="bg-gray-50 p-3 rounded-xl"><p className="text-[10px] text-gray-400 font-bold uppercase">Matches</p><p className="font-bold text-gray-800 text-sm">{selectedUser.matchCount}</p></div>
+                </div>
+
+                {/* Fotos do Usuario */}
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Image size={16} /> Fotos do Perfil</h3>
+                {selectedUser.photos.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {selectedUser.photos.map((photo, i) => (
+                      <img key={i} src={photo} className="w-full aspect-square rounded-xl object-cover cursor-pointer hover:opacity-80 transition-all" onClick={() => window.open(photo, '_blank')} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-xl mb-4 text-center">
+                    <p className="text-sm text-gray-400">Nenhuma foto enviada</p>
+                  </div>
+                )}
+
+                {/* Denuncias */}
+                {selectedUser.reportCount > 0 && (
+                  <div className="bg-red-50 p-3 rounded-xl mb-4">
+                    <p className="text-sm text-red-600 font-bold flex items-center gap-2"><Flag size={14} /> {selectedUser.reportCount} denuncia(s) recebida(s)</p>
+                  </div>
+                )}
+
+                {/* Acoes */}
                 <div className="flex gap-3">
                   {selectedUser.verificationStatus === 'pending' && (
                     <>
                       <button onClick={() => { handleVerifyUser(selectedUser.id, 'verified'); setSelectedUser(null); }}
-                        className="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2"><ShieldCheck size={16} /> Aprovar Verificação</button>
+                        className="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2"><ShieldCheck size={16} /> Aprovar Verificacao</button>
                       <button onClick={() => { handleVerifyUser(selectedUser.id, 'rejected'); setSelectedUser(null); }}
                         className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl text-sm">Rejeitar</button>
                     </>

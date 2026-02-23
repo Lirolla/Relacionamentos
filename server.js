@@ -237,22 +237,44 @@ app.get('/api/admin/stats', async (req, res) => {
 // =====================================================
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const rows = await query('SELECT id, name, email, birth_date, gender, denomination, church_name, city, state, is_premium, is_active, is_blocked, verification_status, role, created_at, last_seen, likes_received, profile_views, bio, reputation_score FROM users ORDER BY created_at DESC', []);
+    const rows = await query('SELECT id, name, email, birth_date, gender, denomination, church_name, city, state, is_premium, is_active, is_blocked, verification_status, role, created_at, last_seen, likes_received, profile_views, bio, reputation_score, phone FROM users ORDER BY created_at DESC', []);
+    
+    // Buscar fotos e verificações de todos os usuários
+    const allPhotos = await query('SELECT user_id, url, is_primary FROM photos ORDER BY is_primary DESC, created_at ASC', []);
+    let allVerifications = [];
+    try {
+      allVerifications = await query('SELECT user_id, photo_url, status FROM verifications ORDER BY submitted_at DESC', []);
+    } catch(e) { /* tabela pode não existir */ }
+    
+    // Agrupar por user_id
+    const photosByUser = {};
+    allPhotos.forEach(p => {
+      if (!photosByUser[p.user_id]) photosByUser[p.user_id] = [];
+      photosByUser[p.user_id].push(p.url);
+    });
+    const verificationByUser = {};
+    allVerifications.forEach(v => {
+      if (!verificationByUser[v.user_id]) verificationByUser[v.user_id] = v.photo_url;
+    });
+    
     const mapped = rows.map(r => {
       const age = r.birth_date ? Math.floor((Date.now() - new Date(r.birth_date).getTime()) / 31557600000) : 0;
+      const userPhotos = photosByUser[r.id] || [];
       return {
         id: String(r.id), name: r.name || '', email: r.email || '', age,
+        birthDate: r.birth_date || '',
         gender: r.gender || '', church: r.church_name || '', denomination: r.denomination || '',
         location: (r.city && r.state) ? `${r.city}, ${r.state}` : (r.city || r.state || ''),
         status: r.is_blocked ? 'blocked' : (r.is_active ? 'active' : 'inactive'),
         isPremium: !!r.is_premium, createdAt: r.created_at || '', lastLogin: r.last_seen || '',
-        avatar: '', photos: [], bio: r.bio || '', phone: '',
+        avatar: userPhotos[0] || '', photos: userPhotos, bio: r.bio || '', phone: r.phone || '',
         verificationStatus: r.verification_status || 'none',
+        verificationPhoto: verificationByUser[r.id] || '',
         matchCount: 0, reportCount: 0
       };
     });
     res.json(mapped);
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+  } catch (err) { console.error('Admin users error:', err); res.status(500).json({ error: 'Erro interno' }); }
 });
 
 app.get('/api/admin/users/:id', async (req, res) => {
@@ -288,8 +310,14 @@ app.put('/api/admin/users/:id/unblock', async (req, res) => {
 
 app.put('/api/admin/users/:id/verify', async (req, res) => {
   try {
-    await query('UPDATE users SET verification_status = ? WHERE id = ?', ['verified', req.params.id]);
-    res.json({ message: 'Usuário verificado' });
+    const status = req.body.status || 'verified';
+    await query('UPDATE users SET verification_status = ? WHERE id = ?', [status, req.params.id]);
+    // Atualizar tamb\u00e9m na tabela verifications se existir
+    try {
+      const vStatus = status === 'verified' ? 'approved' : 'rejected';
+      await query('UPDATE verifications SET status = ?, reviewed_at = NOW() WHERE user_id = ? ORDER BY submitted_at DESC LIMIT 1', [vStatus, req.params.id]);
+    } catch(e) { /* tabela pode n\u00e3o existir */ }
+    res.json({ message: `Usu\u00e1rio ${status}` });
   } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
@@ -529,13 +557,13 @@ app.post('/api/moderation/report', async (req, res) => {
 // =====================================================
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, gender, denomination, churchName } = req.body;
+    const { name, email, password, gender, denomination, churchName, birthDate } = req.body;
     const existing = await query('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing.length > 0) return res.status(400).json({ error: 'Email já cadastrado' });
+    if (existing.length > 0) return res.status(400).json({ error: 'Email j\u00e1 cadastrado' });
     const hash = await bcrypt.hash(password, 10);
     const result = await query(
-      'INSERT INTO users (name, email, password_hash, gender, denomination, church_name) VALUES (?,?,?,?,?,?)',
-      [name, email, hash, gender || 'male', denomination, churchName]
+      'INSERT INTO users (name, email, password_hash, gender, denomination, church_name, birth_date) VALUES (?,?,?,?,?,?,?)',
+      [name, email, hash, gender || 'male', denomination, churchName, birthDate || null]
     );
     const userId = result.insertId;
     const rows = await query('SELECT * FROM users WHERE id = ?', [userId]);
