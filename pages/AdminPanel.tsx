@@ -76,14 +76,29 @@ const AdminPanel: React.FC = () => {
   const [eventForm, setEventForm] = useState({ title: '', church: '', date: '', time: '', location: '', type: 'Culto', description: '', maxAttendees: '100' });
 
   // Executar ação confirmada
-  const executeConfirmedAction = () => {
+  const executeConfirmedAction = async () => {
     if (!confirmAction) return;
     const { type, id } = confirmAction;
-    if (type === 'deleteUser') setUsers(prev => prev.filter(u => u.id !== id));
-    if (type === 'blockUser') setUsers(prev => prev.map(u => u.id === id ? { ...u, status: 'blocked' } : u));
-    if (type === 'unblockUser') setUsers(prev => prev.map(u => u.id === id ? { ...u, status: 'active' } : u));
-    if (type === 'deleteChurch') setChurches(prev => prev.filter(c => c.id !== id));
-    if (type === 'deleteEvent') setEvents(prev => prev.filter(e => e.id !== id));
+    try {
+      if (type === 'deleteUser') {
+        await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' });
+      }
+      if (type === 'blockUser') {
+        await fetch(`${API_BASE}/users/${id}/block`, { method: 'PUT' });
+      }
+      if (type === 'unblockUser') {
+        await fetch(`${API_BASE}/users/${id}/unblock`, { method: 'PUT' });
+      }
+      if (type === 'deleteChurch') {
+        await fetch(`${API_BASE}/churches/${id}`, { method: 'DELETE' });
+      }
+      if (type === 'deleteEvent') {
+        await fetch(`${API_BASE}/events/${id}`, { method: 'DELETE' });
+      }
+      await fetchData();
+    } catch (e) {
+      console.error('Erro ao executar acao:', e);
+    }
     setConfirmAction(null);
   };
 
