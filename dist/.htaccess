@@ -1,3 +1,16 @@
+# Force correct MIME types
+AddType application/javascript .js .mjs
+AddType text/css .css
+AddType image/svg+xml .svg
+AddType application/json .json
+AddType font/woff2 .woff2
+AddType font/woff .woff
+
+# Ensure JS files are served with correct MIME type
+<FilesMatch "\.js$">
+  Header set Content-Type "application/javascript"
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
