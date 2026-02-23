@@ -242,6 +242,15 @@ app.get('/api/admin/users', async (req, res) => {
     // Buscar fotos de todos os usuários
     const allPhotos = await query('SELECT user_id, url, is_primary FROM photos ORDER BY is_primary DESC, created_at ASC', []);
     
+    // Buscar fotos de verificação da tabela verifications como fallback
+    let verificationsByUser = {};
+    try {
+      const verRows = await query('SELECT user_id, photo_url FROM verifications WHERE photo_url IS NOT NULL AND photo_url != "" ORDER BY submitted_at DESC', []);
+      verRows.forEach(v => {
+        if (!verificationsByUser[v.user_id]) verificationsByUser[v.user_id] = v.photo_url;
+      });
+    } catch (e) { /* tabela pode não existir */ }
+    
     // Agrupar por user_id
     const photosByUser = {};
     allPhotos.forEach(p => {
@@ -261,7 +270,7 @@ app.get('/api/admin/users', async (req, res) => {
         isPremium: !!r.is_premium, createdAt: r.created_at || '', lastLogin: r.last_seen || '',
         avatar: userPhotos[0] || '', photos: userPhotos, bio: r.bio || '', phone: '',
         verificationStatus: r.verification_status || 'none',
-        verificationPhoto: r.verification_photo || '',
+        verificationPhoto: r.verification_photo || verificationsByUser[r.id] || '',
         matchCount: 0, reportCount: 0
       };
     });
@@ -725,7 +734,7 @@ app.post('/api/verification/submit', upload.single('photo'), async (req, res) =>
       photoUrl = await uploadToR2(req.file, userId, 'verification');
     }
     
-    await query('UPDATE users SET verification_status = ? WHERE id = ?', ['pending', userId]);
+    await query('UPDATE users SET verification_status = ?, verification_photo = ? WHERE id = ?', ['pending', photoUrl || null, userId]);
     
     // Tentar inserir na tabela verifications (pode não existir)
     try {
@@ -1403,8 +1412,11 @@ app.get('/api/debug/setup', async (req, res) => {
     await query(`CREATE TABLE IF NOT EXISTS verifications (
       id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT NOT NULL,
-      selfie_url VARCHAR(500),
+      type VARCHAR(50) DEFAULT 'selfie',
+      photo_url VARCHAR(500),
       status VARCHAR(20) DEFAULT 'pending',
+      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      reviewed_at DATETIME NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
     results.push('verifications: OK');

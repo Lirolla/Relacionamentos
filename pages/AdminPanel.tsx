@@ -608,11 +608,12 @@ const AdminPanel: React.FC = () => {
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedUser(null)}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               {/* Header do perfil */}
-              <div className="relative h-32 bg-gradient-to-r from-amber-400 to-amber-600 rounded-t-3xl">
-                <button onClick={() => setSelectedUser(null)} className="absolute top-4 right-4 p-2 bg-black/20 rounded-full text-white hover:bg-black/40"><X size={18} /></button>
+              <div className="relative bg-gradient-to-r from-amber-400 to-amber-600 rounded-t-3xl px-6 py-3 flex items-center justify-between">
+                <h2 className="text-white font-bold text-base">Detalhes do Usuário</h2>
+                <button onClick={() => setSelectedUser(null)} className="p-1.5 bg-black/20 rounded-full text-white hover:bg-black/40"><X size={16} /></button>
               </div>
-              <div className="px-6 pb-6 -mt-12">
-                <div className="flex items-end gap-4 mb-4">
+              <div className="px-6 pb-6 pt-4">
+                <div className="flex items-center gap-4 mb-4">
                   {selectedUser.avatar ? (
                     <img src={selectedUser.avatar} className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg" />
                   ) : (
@@ -621,7 +622,7 @@ const AdminPanel: React.FC = () => {
                     </div>
                   )}
                   <div className="pb-1">
-                    <h2 className="text-xl font-bold text-gray-800">{selectedUser.name}</h2>
+                    <h2 className="text-lg font-bold text-gray-800">{selectedUser.name}</h2>
                     <p className="text-gray-500 text-sm">{selectedUser.email}</p>
                     <div className="flex gap-2 mt-1 flex-wrap">
                       {selectedUser.isPremium && <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PREMIUM</span>}

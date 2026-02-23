@@ -679,27 +679,7 @@ CREATE INDEX idx_waiting_list_status ON waiting_list(status);
 INSERT INTO users (name, email, password_hash, birth_date, gender, denomination, church_name, church_role, bio, faith_journey, height, hair_color, city, state, role, is_premium, verification_status, invite_code, invite_status) VALUES
 ('Admin', 'admin@conexaodivina.com.br', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-01-01', 'male', 'Batista', 'Batista Memorial', 'Administrador', 'Administrador do sistema', 'Servo de Deus', 180, 'Preto', 'São Paulo', 'SP', 'admin', TRUE, 'verified', 'ADMIN2026', 'approved');
 
--- Usuários de exemplo
-INSERT INTO users (name, email, password_hash, birth_date, gender, denomination, church_name, church_role, bio, faith_journey, height, hair_color, objective, city, state, is_premium, verification_status, invite_code, invite_status) VALUES
-('João Silva', 'joao@email.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1990-01-15', 'male', 'Batista', 'Igreja Batista Central', 'Membro', 'Servo de Deus buscando minha companheira na fé', 'Convertido há 15 anos', 178, 'Castanho', 'Casamento', 'São Paulo', 'SP', TRUE, 'verified', 'JOAO2026', 'approved'),
-('Maria Santos', 'maria@email.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1993-06-20', 'female', 'Presbiteriana', 'Igreja Presbiteriana', 'Líder de Louvor', 'Apaixonada por Jesus e por servir ao próximo', 'Nascida em berço cristão', 165, 'Preto', 'Namoro sério', 'Rio de Janeiro', 'RJ', FALSE, 'verified', 'MARIA2026', 'approved'),
-('Pedro Oliveira', 'pedro@email.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1988-03-10', 'male', 'Assembleia de Deus', 'AD Vitória', 'Diácono', 'Líder de louvor buscando alguém para caminhar junto', 'Caminhando com Cristo há 20 anos', 182, 'Loiro', 'Casamento', 'Belo Horizonte', 'MG', TRUE, 'none', 'PEDRO2026', 'approved'),
-('Ana Costa', 'ana@email.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1995-11-05', 'female', 'Católica', 'Paróquia São José', 'Professora EBD', 'Professora de escola dominical', 'Firme na rocha que é Cristo', 160, 'Ruivo', 'Namoro sério', 'Curitiba', 'PR', FALSE, 'pending', 'ANA2026', 'approved'),
-('Lucas Ferreira', 'lucas@email.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '1991-08-22', 'male', 'Metodista', 'Igreja Metodista Central', 'Músico', 'Missionário e apaixonado por missões', 'Servindo a Deus desde jovem', 175, 'Preto', 'Amizade cristã', 'Salvador', 'BA', FALSE, 'none', 'LUCAS2026', 'approved');
-
--- Igrejas
-INSERT INTO churches (name, denomination, pastor, address, city, state, phone, email, members_count, is_verified) VALUES
-('Igreja Batista Central', 'Batista', 'Pr. João Silva', 'Rua das Flores, 123', 'São Paulo', 'SP', '(11) 99999-0001', 'contato@batistamemorial.com.br', 350, TRUE),
-('Igreja Presbiteriana do Brasil', 'Presbiteriana', 'Pr. Marcos Oliveira', 'Rua dos Pinheiros, 200', 'Rio de Janeiro', 'RJ', '(21) 99999-0002', 'contato@ipb.com.br', 600, TRUE),
-('Assembleia de Deus Vitória', 'Assembleia de Deus', 'Pr. Samuel Ferreira', 'Rua do Brás, 500', 'Belo Horizonte', 'MG', '(31) 99999-0003', 'contato@advitoria.com.br', 5000, FALSE),
-('Paróquia São José', 'Católica', 'Pe. Antônio', 'Av. Brasil, 1000', 'Curitiba', 'PR', '(41) 99999-0004', 'contato@saojose.com.br', 800, TRUE),
-('Igreja Metodista Central', 'Metodista', 'Pr. Carlos Moura', 'Rua Vergueiro, 800', 'Salvador', 'BA', '(71) 99999-0005', 'contato@metodista.com.br', 400, FALSE);
-
--- Eventos
-INSERT INTO events (title, description, date, time, end_date, location, church_id, creator_id, category, max_participants, current_participants, price, is_free) VALUES
-('Retiro de Solteiros 2026', 'Um fim de semana especial para solteiros cristãos', '2026-03-15', '08:00', '2026-03-17', 'Sítio Recanto da Paz - Mairiporã, SP', 1, 1, 'retiro', 80, 45, 250.00, FALSE),
-('Louvor & Café', 'Uma noite de louvor, café gourmet e networking cristão', '2026-03-01', '19:00', '2026-03-01', 'Café Cristão - Av. Paulista, 1000', 2, 2, 'social', 50, 32, 0, TRUE),
-('Conferência Amor & Propósito', 'Palestrantes renomados falam sobre relacionamentos', '2026-04-10', '14:00', '2026-04-12', 'Centro de Convenções - São Paulo', 3, 3, 'conferencia', 500, 180, 120.00, FALSE);
+-- (Dados de exemplo removidos - usar apenas dados reais do banco)
 
 -- Interesses
 INSERT INTO interests (name, category, icon) VALUES
