@@ -1263,7 +1263,7 @@ app.get('/api/debug/tables', async (req, res) => {
 app.get('/api/debug/columns/:table', async (req, res) => {
   try {
     const tableName = req.params.table.replace(/[^a-zA-Z0-9_]/g, '');
-    const cols = await query(`SHOW COLUMNS FROM ${tableName}`, []);
+    const cols = await query(`SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND TABLE_SCHEMA = DATABASE()`, [tableName]);
     res.json({ columns: cols });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
