@@ -875,7 +875,7 @@ app.post('/api/stories', upload.single('media'), async (req, res) => {
       [userId, mediaType, mediaUrl, caption || null, expiresAt]);
     // Buscar dados do usuário para retornar ao frontend
     const userRows = await query('SELECT name FROM users WHERE id = ?', [userId]);
-    const userPhotoRows = await query('SELECT url FROM photos WHERE user_id = ? AND is_profile = 1 LIMIT 1', [userId]);
+    const userPhotoRows = await query('SELECT url FROM photos WHERE user_id = ? AND is_primary = 1 LIMIT 1', [userId]);
     const storyData = {
       id: String(result.insertId),
       userId: String(userId),
@@ -894,7 +894,7 @@ app.post('/api/stories', upload.single('media'), async (req, res) => {
 app.get('/api/stories', async (req, res) => {
   try {
     const rows = await query(`SELECT s.*, u.name as userName, 
-      (SELECT p.url FROM photos p WHERE p.user_id = s.user_id AND p.is_profile = 1 LIMIT 1) as userPhoto
+      (SELECT p.url FROM photos p WHERE p.user_id = s.user_id AND p.is_primary = 1 LIMIT 1) as userPhoto
       FROM stories s LEFT JOIN users u ON s.user_id = u.id 
       WHERE s.expires_at > NOW() ORDER BY s.created_at DESC`, []);
     const stories = rows.map(r => ({
@@ -987,7 +987,7 @@ app.get('/api/reels', async (req, res) => {
   try {
     const { category } = req.query;
     let sql = `SELECT r.*, u.name as userName, u.church_name as churchName,
-      (SELECT p.url FROM photos p WHERE p.user_id = r.user_id AND p.is_profile = 1 LIMIT 1) as userPhoto
+      (SELECT p.url FROM photos p WHERE p.user_id = r.user_id AND p.is_primary = 1 LIMIT 1) as userPhoto
       FROM reels r LEFT JOIN users u ON r.user_id = u.id`;
     const params = [];
     if (category && category !== 'all') { sql += ' WHERE r.category = ?'; params.push(category); }
@@ -1247,6 +1247,142 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), (re
 app.post('/api/users/:id/share', (req, res) => {
   const shareLink = `https://silver-owl-427464.hostingersite.com/perfil/${req.params.id}`;
   res.json({ success: true, shareLink });
+});
+
+// =====================================================
+// ===== DEBUG / SETUP TABLES =====
+// =====================================================
+app.get('/api/debug/tables', async (req, res) => {
+  try {
+    const tables = await query('SHOW TABLES', []);
+    const tableNames = tables.map(t => Object.values(t)[0]);
+    res.json({ tables: tableNames });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/debug/setup', async (req, res) => {
+  const results = [];
+  try {
+    // Criar tabela stories se não existir
+    await query(`CREATE TABLE IF NOT EXISTS stories (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      media_type ENUM('photo','video') DEFAULT 'photo',
+      media_url VARCHAR(500) NOT NULL,
+      caption TEXT,
+      views_count INT DEFAULT 0,
+      expires_at DATETIME NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_user_id (user_id),
+      INDEX idx_expires (expires_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('stories: OK');
+
+    // Criar tabela story_views se não existir
+    await query(`CREATE TABLE IF NOT EXISTS story_views (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      story_id INT NOT NULL,
+      viewer_id INT NOT NULL,
+      viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_view (story_id, viewer_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('story_views: OK');
+
+    // Criar tabela reels se não existir
+    await query(`CREATE TABLE IF NOT EXISTS reels (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      video_url VARCHAR(500) NOT NULL,
+      thumbnail_url VARCHAR(500),
+      description TEXT,
+      category VARCHAR(50) DEFAULT 'geral',
+      likes_count INT DEFAULT 0,
+      comments_count INT DEFAULT 0,
+      shares_count INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_user_id (user_id),
+      INDEX idx_category (category)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('reels: OK');
+
+    // Criar tabela photos se não existir
+    await query(`CREATE TABLE IF NOT EXISTS photos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      url VARCHAR(500) NOT NULL,
+      is_primary TINYINT(1) DEFAULT 0,
+      sort_order INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_user_id (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('photos: OK');
+
+    // Criar tabelas auxiliares
+    await query(`CREATE TABLE IF NOT EXISTS matches (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user1_id INT NOT NULL,
+      user2_id INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('matches: OK');
+
+    await query(`CREATE TABLE IF NOT EXISTS reports (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      reporter_id INT NOT NULL,
+      reported_id INT NOT NULL,
+      reason TEXT,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('reports: OK');
+
+    await query(`CREATE TABLE IF NOT EXISTS verifications (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      selfie_url VARCHAR(500),
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('verifications: OK');
+
+    await query(`CREATE TABLE IF NOT EXISTS subscriptions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      plan VARCHAR(50),
+      price DECIMAL(10,2),
+      status VARCHAR(20) DEFAULT 'active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('subscriptions: OK');
+
+    await query(`CREATE TABLE IF NOT EXISTS churches (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(200) NOT NULL,
+      denomination VARCHAR(100),
+      address TEXT,
+      city VARCHAR(100),
+      state VARCHAR(50),
+      lat DECIMAL(10,8),
+      lng DECIMAL(11,8),
+      is_verified TINYINT(1) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('churches: OK');
+
+    await query(`CREATE TABLE IF NOT EXISTS events (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      description TEXT,
+      church_id INT,
+      event_date DATETIME,
+      location VARCHAR(200),
+      is_active TINYINT(1) DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, []);
+    results.push('events: OK');
+
+    res.json({ success: true, results });
+  } catch (err) { res.status(500).json({ error: err.message, results }); }
 });
 
 // =====================================================
