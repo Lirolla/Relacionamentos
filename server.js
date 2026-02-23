@@ -237,24 +237,16 @@ app.get('/api/admin/stats', async (req, res) => {
 // =====================================================
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const rows = await query('SELECT id, name, email, birth_date, gender, denomination, church_name, city, state, is_premium, is_active, is_blocked, verification_status, role, created_at, last_seen, likes_received, profile_views, bio, reputation_score, phone FROM users ORDER BY created_at DESC', []);
+    const rows = await query('SELECT id, name, email, birth_date, gender, denomination, church_name, city, state, is_premium, is_active, is_blocked, verification_status, verification_photo, role, created_at, last_seen, likes_received, profile_views, bio, reputation_score FROM users ORDER BY created_at DESC', []);
     
-    // Buscar fotos e verificações de todos os usuários
+    // Buscar fotos de todos os usuários
     const allPhotos = await query('SELECT user_id, url, is_primary FROM photos ORDER BY is_primary DESC, created_at ASC', []);
-    let allVerifications = [];
-    try {
-      allVerifications = await query('SELECT user_id, photo_url, status FROM verifications ORDER BY submitted_at DESC', []);
-    } catch(e) { /* tabela pode não existir */ }
     
     // Agrupar por user_id
     const photosByUser = {};
     allPhotos.forEach(p => {
       if (!photosByUser[p.user_id]) photosByUser[p.user_id] = [];
       photosByUser[p.user_id].push(p.url);
-    });
-    const verificationByUser = {};
-    allVerifications.forEach(v => {
-      if (!verificationByUser[v.user_id]) verificationByUser[v.user_id] = v.photo_url;
     });
     
     const mapped = rows.map(r => {
@@ -267,9 +259,9 @@ app.get('/api/admin/users', async (req, res) => {
         location: (r.city && r.state) ? `${r.city}, ${r.state}` : (r.city || r.state || ''),
         status: r.is_blocked ? 'blocked' : (r.is_active ? 'active' : 'inactive'),
         isPremium: !!r.is_premium, createdAt: r.created_at || '', lastLogin: r.last_seen || '',
-        avatar: userPhotos[0] || '', photos: userPhotos, bio: r.bio || '', phone: r.phone || '',
+        avatar: userPhotos[0] || '', photos: userPhotos, bio: r.bio || '', phone: '',
         verificationStatus: r.verification_status || 'none',
-        verificationPhoto: verificationByUser[r.id] || '',
+        verificationPhoto: r.verification_photo || '',
         matchCount: 0, reportCount: 0
       };
     });
