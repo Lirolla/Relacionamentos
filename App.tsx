@@ -72,14 +72,35 @@ const LoginScreen: React.FC<{ onLogin: (email: string, password: string) => void
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       setError('Preencha todos os campos');
       return;
     }
     setError('');
-    onLogin(email, password);
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Email ou senha incorretos');
+        setLoading(false);
+        return;
+      }
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_id', String(data.user.id));
+      localStorage.setItem('user_data', JSON.stringify(data.user));
+      onLogin(email, password);
+    } catch (err) {
+      setError('Erro de conexão. Tente novamente.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -114,8 +135,8 @@ const LoginScreen: React.FC<{ onLogin: (email: string, password: string) => void
           
           <button onClick={onForgotPassword} className="text-amber-600 text-sm font-bold self-end">Esqueci minha senha</button>
           
-          <button onClick={handleLogin} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
-            Entrar
+          <button onClick={handleLogin} disabled={loading} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4 disabled:opacity-50">
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </div>
       </div>
@@ -132,6 +153,55 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
     location: '', bio: '', faithJourney: '',
     gender: '', maritalStatus: 'Solteiro(a)', hasChildren: false
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleRegister = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          gender: form.gender === 'Masculino' ? 'male' : 'female',
+          denomination: form.denomination,
+          churchName: form.churchName
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Erro ao criar conta');
+        setLoading(false);
+        return;
+      }
+      // Atualizar campos extras no banco
+      if (data.user && data.user.id) {
+        await fetch(`/api/users/${data.user.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            church_role: form.churchRole,
+            bio: form.bio,
+            faith_journey: form.faithJourney,
+            city: form.location,
+            marital_status: form.maritalStatus === 'Divorciado(a)' ? 'divorced' : form.maritalStatus === 'Viúvo(a)' ? 'widowed' : 'single',
+            has_children: form.hasChildren ? 1 : 0
+          })
+        });
+      }
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_id', String(data.user.id));
+      localStorage.setItem('user_data', JSON.stringify(data.user));
+      onRegister();
+    } catch (err) {
+      setError('Erro de conexão. Tente novamente.');
+    }
+    setLoading(false);
+  };
   
   return (
     <div className="min-h-screen bg-white flex flex-col p-8">
@@ -272,8 +342,9 @@ const RegisterScreen: React.FC<{ onRegister: () => void; onBack: () => void }> =
                 </p>
               </div>
             </div>
-            <button onClick={onRegister} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4">
-              Criar Minha Conta
+            {error && <p className="text-red-500 text-sm font-medium mb-2">{error}</p>}
+            <button onClick={handleRegister} disabled={loading} className="w-full py-5 bg-amber-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all mt-4 disabled:opacity-50">
+              {loading ? 'Criando conta...' : 'Criar Minha Conta'}
             </button>
           </div>
         )}
@@ -392,6 +463,63 @@ const App: React.FC = () => {
   const isTrialExpired = trialDaysLeft <= 0 && !isPaid && !isAdmin;
   const isVerified = verificationStatus === 'verified' || localStorage.getItem('identity_verified') === 'true' || isAdmin;
 
+  // Função para mapear user do banco para Profile do frontend
+  const mapUserToProfile = (user: any): Profile & { role: UserRole } => {
+    const age = user.birth_date ? Math.floor((Date.now() - new Date(user.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0;
+    return {
+      id: String(user.id),
+      name: user.name || '',
+      age,
+      bio: user.bio || '',
+      imageUrl: '',
+      denomination: user.denomination || '',
+      churchName: user.church_name || '',
+      churchRole: user.church_role || 'Membro',
+      interests: [],
+      location: user.city ? `${user.city}${user.state ? ', ' + user.state : ''}` : '',
+      coordinates: user.latitude && user.longitude ? { lat: parseFloat(user.latitude), lng: parseFloat(user.longitude) } : undefined,
+      faithJourney: user.faith_journey || '',
+      maritalStatus: user.marital_status === 'divorced' ? 'Divorciado(a)' : user.marital_status === 'widowed' ? 'Vi\u00FAvo(a)' : 'Solteiro(a)',
+      hasChildren: !!user.has_children,
+      physical: { height: user.height, hairColor: user.hair_color, skinTone: user.skin_tone, eyeColor: user.eye_color },
+      role: user.role === 'admin' ? UserRole.ADMIN : UserRole.USER,
+      is_premium: !!user.is_premium,
+      profile_views: user.profile_views || 0,
+      likes_received: user.likes_received || 0,
+      likes_given: user.likes_given || 0,
+    } as any;
+  };
+
+  // Carregar fotos do usuário do banco
+  const loadUserPhotos = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/photos`);
+      if (res.ok) {
+        const photos = await res.json();
+        const urls = photos.map((p: any) => p.url);
+        setUserPhotos(urls);
+        if (urls.length > 0) {
+          setState(prev => ({ ...prev, currentUser: { ...prev.currentUser, imageUrl: urls[0] } }));
+        }
+      }
+    } catch (err) { console.error('Erro ao carregar fotos:', err); }
+  };
+
+  // Restaurar sessão do localStorage
+  useEffect(() => {
+    const savedUserData = localStorage.getItem('user_data');
+    const savedUserId = localStorage.getItem('user_id');
+    if (savedUserData && savedUserId) {
+      try {
+        const user = JSON.parse(savedUserData);
+        const profile = mapUserToProfile(user);
+        setState(prev => ({ ...prev, currentUser: profile }));
+        loadUserPhotos(String(user.id));
+        setScreen('app');
+      } catch (err) { console.error('Erro ao restaurar sessão:', err); }
+    }
+  }, []);
+
   // Login handler
   const handleLogin = (email: string, password: string) => {
     // Admin geral - bypass total
@@ -408,7 +536,20 @@ const App: React.FC = () => {
       setActiveTab('swipe');
       return;
     }
-    // Login normal
+    // Login normal - o LoginScreen já salvou os dados no localStorage
+    const savedUserData = localStorage.getItem('user_data');
+    if (savedUserData) {
+      try {
+        const user = JSON.parse(savedUserData);
+        const profile = mapUserToProfile(user);
+        setState(prev => ({ ...prev, currentUser: profile }));
+        loadUserPhotos(String(user.id));
+        if (user.verification_status === 'verified' || user.video_verification_status === 'verified') {
+          setVerificationStatus('verified');
+          localStorage.setItem('identity_verified', 'true');
+        }
+      } catch (err) { console.error('Erro ao processar login:', err); }
+    }
     setScreen('app');
   };
 
@@ -592,7 +733,17 @@ const App: React.FC = () => {
   if (showForgotPassword) return <ForgotPassword onSubmit={(email) => { alert('Email de recuperação enviado para ' + email); setShowForgotPassword(false); }} onBack={() => setShowForgotPassword(false)} />;
   if (screen === 'welcome') return <WelcomeScreen onLogin={() => setScreen('login')} onRegister={() => setScreen('register')} />;
   if (screen === 'login') return <LoginScreen onLogin={handleLogin} onBack={() => setScreen('welcome')} onForgotPassword={() => setShowForgotPassword(true)} />;
-  if (screen === 'register') return <RegisterScreen onRegister={() => setScreen('app')} onBack={() => setScreen('welcome')} />;
+  if (screen === 'register') return <RegisterScreen onRegister={() => {
+    const savedUserData = localStorage.getItem('user_data');
+    if (savedUserData) {
+      try {
+        const user = JSON.parse(savedUserData);
+        const profile = mapUserToProfile(user);
+        setState(prev => ({ ...prev, currentUser: profile }));
+      } catch (err) { console.error('Erro ao processar registro:', err); }
+    }
+    setScreen('app');
+  }} onBack={() => setScreen('welcome')} />;
 
   // ===================== TELA DE VERIFICAÇÃO OBRIGATÓRIA =====================
   if (!isVerified && screen === 'app') return (

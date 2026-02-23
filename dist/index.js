@@ -592,11 +592,22 @@ app.get('/api/users/:id', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
   try {
-    const { name, bio, faith_journey, denomination, church_name, city, state, height, hair_color, objective } = req.body;
-    await query('UPDATE users SET name=?, bio=?, faith_journey=?, denomination=?, church_name=?, city=?, state=?, height=?, hair_color=?, objective=? WHERE id=?',
-      [name, bio, faith_journey, denomination, church_name, city, state, height, hair_color, objective, req.params.id]);
-    res.json({ message: 'Perfil atualizado' });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+    const fields = req.body;
+    const updates = [];
+    const values = [];
+    const allowedFields = ['name', 'bio', 'faith_journey', 'denomination', 'church_name', 'church_role', 'city', 'state', 'height', 'hair_color', 'eye_color', 'skin_tone', 'objective', 'marital_status', 'has_children', 'worship_style', 'favorite_verse', 'church_frequency'];
+    for (const key of allowedFields) {
+      if (fields[key] !== undefined) {
+        updates.push(`${key} = ?`);
+        values.push(fields[key]);
+      }
+    }
+    if (updates.length === 0) return res.json({ message: 'Nada para atualizar' });
+    values.push(req.params.id);
+    await query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
+    const rows = await query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Perfil atualizado', user: rows[0] });
+  } catch (err) { console.error('Erro update user:', err.message); res.status(500).json({ error: 'Erro interno' }); }
 });
 
 app.put('/api/users/:id/location', async (req, res) => {
