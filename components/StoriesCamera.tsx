@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, RotateCcw, Type, Sticker, Sparkles, Heart, Send, Image, Palette, ChevronLeft, ChevronRight, Check, Plus, Music, MapPin } from 'lucide-react';
+import { X, Camera, Type, Sticker, Sparkles, Send, Image, Palette } from 'lucide-react';
 
 interface StoriesCameraProps {
   onClose: () => void;
-  onPublish: (story: { imageUrl: string; text?: string; sticker?: string; filter?: string }) => void;
+  onPublish: (story: any) => void;
   userName: string;
   userPhoto: string;
+  userId: string;
 }
 
 const STICKERS = [
@@ -24,16 +25,9 @@ const STICKERS = [
 ];
 
 const TEXT_STICKERS = [
-  'Deus é fiel! 🙏',
-  'Abençoado(a) ✨',
-  'Jesus te ama ❤️',
-  'Fé em Deus 🕊️',
-  'Gratidão 🙌',
-  'Tudo posso nEle! 💪',
-  'Paz do Senhor ☮️',
-  'Adoração 🎵',
-  'Em oração 📿',
-  'Deus no controle 👑',
+  'Deus é fiel! 🙏', 'Abençoado(a) ✨', 'Jesus te ama ❤️', 'Fé em Deus 🕊️',
+  'Gratidão 🙌', 'Tudo posso nEle! 💪', 'Paz do Senhor ☮️', 'Adoração 🎵',
+  'Em oração 📿', 'Deus no controle 👑',
 ];
 
 const FILTERS = [
@@ -47,11 +41,10 @@ const FILTERS = [
   { id: 'divine', name: 'Divino', style: { filter: 'brightness(1.2) saturate(1.3) contrast(0.95)' } },
 ];
 
-const SAMPLE_PHOTOS: string[] = [];
-
-const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userName, userPhoto }) => {
+const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userName, userPhoto, userId }) => {
   const [step, setStep] = useState<'capture' | 'edit' | 'preview'>('capture');
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFilter, setSelectedFilter] = useState(FILTERS[0]);
   const [showStickers, setShowStickers] = useState(false);
   const [showTextStickers, setShowTextStickers] = useState(false);
@@ -61,16 +54,13 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
   const [customText, setCustomText] = useState('');
   const [showCustomText, setShowCustomText] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleSelectPhoto = (url: string) => {
-    setSelectedPhoto(url);
-    setStep('edit');
-  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (ev) => {
         setSelectedPhoto(ev.target?.result as string);
@@ -89,17 +79,28 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
     setShowTextStickers(false);
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    if (!selectedFile) return;
     setIsPublishing(true);
-    setTimeout(() => {
-      onPublish({
-        imageUrl: selectedPhoto || '',
-        filter: selectedFilter.id,
-        sticker: addedStickers.map(s => s.emoji).join(''),
-        text: addedTexts.map(t => t.text).join(' | '),
-      });
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('media', selectedFile);
+      formData.append('userId', userId);
+      formData.append('type', 'image');
+      const caption = addedTexts.map(t => t.text).join(' | ');
+      if (caption) formData.append('caption', caption);
+
+      const res = await fetch('/api/stories', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao publicar story');
+      
+      onPublish(data);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao publicar');
+    } finally {
       setIsPublishing(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -115,6 +116,13 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
         <div className="w-12" />
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="absolute top-20 left-4 right-4 z-50 bg-red-500/90 text-white p-3 rounded-xl text-sm text-center">
+          {error}
+        </div>
+      )}
+
       {/* Capture Step */}
       {step === 'capture' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6">
@@ -123,58 +131,32 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
           </div>
           <h2 className="text-white text-2xl font-bold mb-2">Criar Story</h2>
           <p className="text-white/60 text-sm text-center mb-8">Compartilhe um momento com a comunidade</p>
-
-          {/* Upload Button */}
           <button onClick={() => fileInputRef.current?.click()} className="w-full max-w-xs py-5 bg-amber-500 text-white font-bold rounded-2xl mb-4 flex items-center justify-center gap-3 active:scale-95 transition-all">
             <Image size={20} /> Escolher da Galeria
           </button>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-
-          {/* Sample Photos */}
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-6 mb-4">Ou escolha uma foto</p>
-          <div className="grid grid-cols-4 gap-3 w-full max-w-xs">
-            {SAMPLE_PHOTOS.map((photo, i) => (
-              <button key={i} onClick={() => handleSelectPhoto(photo)} className="aspect-square rounded-2xl overflow-hidden border-2 border-white/20 hover:border-amber-500 transition-all active:scale-90">
-                <img src={photo} className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
+          <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={handleFileUpload} className="hidden" />
         </div>
       )}
 
       {/* Edit Step */}
       {step === 'edit' && selectedPhoto && (
         <div className="flex-1 flex flex-col">
-          {/* Photo with filter and stickers */}
-          <div className="flex-1 relative overflow-hidden">
+          <div className="flex-1 relative overflow-hidden mt-16">
             <img src={selectedPhoto} className="w-full h-full object-cover" style={selectedFilter.style} />
-            
-            {/* Stickers overlay */}
             {addedStickers.map((s, i) => (
-              <div key={i} className="absolute text-5xl animate-bounce" style={{ left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)' }}>
+              <div key={i} className="absolute text-5xl" style={{ left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)' }}>
                 {s.emoji}
               </div>
             ))}
-
-            {/* Text overlays */}
             {addedTexts.map((t, i) => (
               <div key={i} className="absolute px-4 py-2 bg-black/50 backdrop-blur-md rounded-2xl text-white font-bold text-sm" style={{ left: `${t.x}%`, top: `${t.y}%` }}>
                 {t.text}
               </div>
             ))}
-
-            {/* Custom text input */}
             {showCustomText && (
               <div className="absolute inset-x-0 top-1/3 flex items-center justify-center p-4">
                 <div className="bg-black/70 backdrop-blur-xl rounded-2xl p-4 w-full max-w-sm">
-                  <input
-                    type="text"
-                    value={customText}
-                    onChange={e => setCustomText(e.target.value)}
-                    placeholder="Digite seu texto..."
-                    className="w-full bg-white/10 text-white rounded-xl px-4 py-3 text-sm outline-none placeholder-white/40"
-                    autoFocus
-                  />
+                  <input type="text" value={customText} onChange={e => setCustomText(e.target.value)} placeholder="Digite seu texto..." className="w-full bg-white/10 text-white rounded-xl px-4 py-3 text-sm outline-none placeholder-white/40" autoFocus />
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => setShowCustomText(false)} className="flex-1 py-2 bg-white/10 text-white rounded-xl text-sm">Cancelar</button>
                     <button onClick={() => { if (customText.trim()) { handleAddTextSticker(customText); setCustomText(''); setShowCustomText(false); } }} className="flex-1 py-2 bg-amber-500 text-white rounded-xl text-sm font-bold">Adicionar</button>
@@ -184,9 +166,7 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
             )}
           </div>
 
-          {/* Edit Tools */}
           <div className="bg-black/90 backdrop-blur-xl p-4">
-            {/* Tool buttons */}
             {!showStickers && !showTextStickers && !showFilters && (
               <div className="flex items-center justify-center gap-6 mb-4">
                 <button onClick={() => setShowFilters(true)} className="flex flex-col items-center gap-1">
@@ -208,7 +188,6 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
               </div>
             )}
 
-            {/* Filters panel */}
             {showFilters && (
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -229,7 +208,6 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
               </div>
             )}
 
-            {/* Stickers panel */}
             {showStickers && (
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -248,44 +226,37 @@ const StoriesCamera: React.FC<StoriesCameraProps> = ({ onClose, onPublish, userN
               </div>
             )}
 
-            {/* Text stickers panel */}
             {showTextStickers && (
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <button onClick={() => setShowTextStickers(false)} className="text-white/60 text-sm">← Voltar</button>
-                  <span className="text-white font-bold text-sm">Frases Cristãs</span>
+                  <span className="text-white font-bold text-sm">Frases de Fé</span>
                   <div className="w-12" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {TEXT_STICKERS.map((text, i) => (
-                    <button key={i} onClick={() => handleAddTextSticker(text)} className="px-4 py-3 bg-white/10 rounded-2xl text-white text-xs font-bold text-left active:scale-95 transition-all hover:bg-amber-500/30">
-                      {text}
+                  {TEXT_STICKERS.map((t, i) => (
+                    <button key={i} onClick={() => handleAddTextSticker(t)} className="p-3 bg-white/5 rounded-xl text-white text-xs text-left active:scale-95 transition-all">
+                      {t}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Action buttons */}
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => { setStep('capture'); setSelectedPhoto(null); setAddedStickers([]); setAddedTexts([]); }} className="flex-1 py-4 bg-white/10 text-white font-bold rounded-2xl">
-                <RotateCcw size={18} className="inline mr-2" /> Refazer
-              </button>
-              <button onClick={handlePublish} disabled={isPublishing} className="flex-1 py-4 bg-amber-500 text-white font-bold rounded-2xl active:scale-95 transition-all disabled:opacity-50">
+            {/* Publish button */}
+            {!showStickers && !showTextStickers && !showFilters && !showCustomText && (
+              <button onClick={handlePublish} disabled={isPublishing} className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50">
                 {isPublishing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Publicando...
-                  </span>
+                  <><span className="animate-spin">⏳</span> Publicando...</>
                 ) : (
-                  <span><Send size={18} className="inline mr-2" /> Publicar Story</span>
+                  <><Send size={18} /> Publicar Story</>
                 )}
               </button>
-            </div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 };
-
 export default StoriesCamera;

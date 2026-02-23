@@ -496,6 +496,25 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Carregar stories do banco de dados
+  const fetchStories = async () => {
+    try {
+      const res = await fetch('/api/stories');
+      if (res.ok) {
+        const data = await res.json();
+        setStories(data.stories || []);
+      }
+    } catch (err) { console.error('Erro ao carregar stories:', err); }
+  };
+
+  useEffect(() => {
+    if (screen === 'app') {
+      fetchStories();
+      const interval = setInterval(fetchStories, 30000); // Atualizar a cada 30s
+      return () => clearInterval(interval);
+    }
+  }, [screen]);
+
   // Cálculo de distância
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371;
@@ -1459,7 +1478,7 @@ const App: React.FC = () => {
 
       {/* ===================== REELS CRISTÃOS ===================== */}
       {showReels && (
-        <ChristianReels onClose={() => setShowReels(false)} />
+        <ChristianReels onClose={() => setShowReels(false)} currentUserId={state.currentUser.id} />
       )}
 
       {/* ===================== FILTROS AVANÇADOS ===================== */}
@@ -1506,7 +1525,10 @@ const App: React.FC = () => {
       {showStoriesCamera && (
         <StoriesCamera
           onClose={() => setShowStoriesCamera(false)}
-          onPost={(storyData) => { console.log('Story posted:', storyData); setShowStoriesCamera(false); }}
+          onPublish={(storyData: any) => { setStories((prev: any[]) => [storyData, ...prev]); setShowStoriesCamera(false); fetchStories(); }}
+          userName={state.currentUser.name}
+          userPhoto={state.currentUser.photos?.[0] || ''}
+          userId={state.currentUser.id}
         />
       )}
 

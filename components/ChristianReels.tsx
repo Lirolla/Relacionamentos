@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, Bookmark, Music2, ChevronUp, ChevronDown, Play, Pause, Volume2, VolumeX, Plus, Church, ShieldCheck, X, Send, MoreVertical, Flag, UserPlus } from 'lucide-react';
 
 interface Reel {
@@ -33,8 +33,64 @@ const CATEGORIES = [
   { id: 'reflexao', label: 'Reflexões', icon: '💭' },
 ];
 
-const ChristianReels: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+const ChristianReels: React.FC<{ onClose?: () => void; currentUserId?: string }> = ({ onClose, currentUserId }) => {
   const [reels, setReels] = useState<Reel[]>([]);
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Carregar reels do banco
+  useEffect(() => {
+    fetchReels();
+  }, []);
+
+  const fetchReels = async (category?: string) => {
+    try {
+      const url = category && category !== 'all' ? `/api/reels?category=${category}` : '/api/reels';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = (Array.isArray(data) ? data : []).map((r: any) => ({
+          id: String(r.id),
+          userId: String(r.user_id),
+          userName: r.userName || 'Usu\u00e1rio',
+          userPhoto: r.userPhoto || '',
+          isPastorVerified: false,
+          churchName: r.churchName || '',
+          videoUrl: r.video_url || '',
+          thumbnailUrl: r.thumbnail_url || r.video_url || '',
+          caption: r.description || '',
+          category: (r.category || 'reflexao') as any,
+          likes: r.likes_count || 0,
+          comments: [],
+          shares: r.shares_count || 0,
+          isLiked: false,
+          isSaved: false,
+          createdAt: r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : 'hoje'
+        }));
+        setReels(mapped);
+      }
+    } catch (err) { console.error('Erro ao carregar reels:', err); }
+  };
+
+  const handleUploadReel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUserId) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+      formData.append('userId', currentUserId);
+      formData.append('description', '');
+      formData.append('category', 'reflexao');
+      const res = await fetch('/api/reels', { method: 'POST', body: formData });
+      if (res.ok) {
+        fetchReels();
+        setShowUpload(false);
+      }
+    } catch (err) { console.error('Erro upload reel:', err); }
+    finally { setUploading(false); }
+  };
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
@@ -83,7 +139,28 @@ const ChristianReels: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
 
   const formatNumber = (n: number) => n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toString();
 
-  if (!currentReel) return null;
+  if (!currentReel) return (
+    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+      <div className="absolute top-0 left-0 right-0 z-30 p-4 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          {onClose && <button onClick={onClose} className="p-2 text-white"><X size={24} /></button>}
+          <h2 className="text-white font-bold text-lg">Reels Crist\u00e3os</h2>
+        </div>
+        <button onClick={() => videoInputRef.current?.click()} className="p-2 bg-white/20 rounded-full text-white backdrop-blur-sm"><Plus size={22} /></button>
+        <input ref={videoInputRef} type="file" accept="video/*" onChange={handleUploadReel} className="hidden" />
+      </div>
+      {uploading ? (
+        <div className="text-white text-center"><span className="animate-spin text-4xl">\u23F3</span><p className="mt-4 font-bold">Enviando reel...</p></div>
+      ) : (
+        <div className="text-center p-8">
+          <p className="text-6xl mb-4">\uD83C\uDFAC</p>
+          <h3 className="text-white text-xl font-bold mb-2">Nenhum Reel ainda</h3>
+          <p className="text-white/60 text-sm mb-6">Seja o primeiro a compartilhar um reel!</p>
+          <button onClick={() => videoInputRef.current?.click()} className="px-6 py-3 bg-amber-500 text-white font-bold rounded-2xl">Enviar V\u00eddeo</button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col" ref={containerRef} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
@@ -97,9 +174,10 @@ const ChristianReels: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
           )}
           <h2 className="text-white font-bold text-lg">Reels Cristãos</h2>
         </div>
-        <button className="p-2 bg-white/20 rounded-full text-white backdrop-blur-sm">
+        <button onClick={() => videoInputRef.current?.click()} className="p-2 bg-white/20 rounded-full text-white backdrop-blur-sm">
           <Plus size={22} />
         </button>
+        <input ref={videoInputRef} type="file" accept="video/*" onChange={handleUploadReel} className="hidden" />
       </div>
 
       {/* Category Pills */}
@@ -108,7 +186,7 @@ const ChristianReels: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
           {CATEGORIES.map(cat => (
             <button
               key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setCurrentIndex(0); }}
+              onClick={() => { setSelectedCategory(cat.id); setCurrentIndex(0); fetchReels(cat.id); }}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                 selectedCategory === cat.id ? 'bg-amber-500 text-white' : 'bg-white/20 text-white/80 backdrop-blur-sm'
               }`}

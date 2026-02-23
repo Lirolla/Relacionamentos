@@ -873,15 +873,43 @@ app.post('/api/stories', upload.single('media'), async (req, res) => {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const result = await query('INSERT INTO stories (user_id, media_type, media_url, caption, expires_at) VALUES (?,?,?,?,?)', 
       [userId, mediaType, mediaUrl, caption || null, expiresAt]);
-    res.json({ success: true, id: result.insertId, url: mediaUrl });
+    // Buscar dados do usuário para retornar ao frontend
+    const userRows = await query('SELECT name FROM users WHERE id = ?', [userId]);
+    const userPhotoRows = await query('SELECT url FROM photos WHERE user_id = ? AND is_profile = 1 LIMIT 1', [userId]);
+    const storyData = {
+      id: String(result.insertId),
+      userId: String(userId),
+      userName: userRows[0]?.name || 'Usuário',
+      userPhoto: userPhotoRows[0]?.url || '',
+      imageUrl: mediaUrl,
+      mediaType,
+      caption: caption || null,
+      createdAt: new Date().toISOString(),
+      viewed: false
+    };
+    res.json(storyData);
   } catch (err) { console.error('Erro upload story:', err); res.status(500).json({ error: 'Erro ao enviar story' }); }
 });
 
 app.get('/api/stories', async (req, res) => {
   try {
-    const rows = await query('SELECT s.*, u.name as userName FROM stories s LEFT JOIN users u ON s.user_id = u.id WHERE s.expires_at > NOW() ORDER BY s.created_at DESC', []);
-    res.json({ stories: rows });
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+    const rows = await query(`SELECT s.*, u.name as userName, 
+      (SELECT p.url FROM photos p WHERE p.user_id = s.user_id AND p.is_profile = 1 LIMIT 1) as userPhoto
+      FROM stories s LEFT JOIN users u ON s.user_id = u.id 
+      WHERE s.expires_at > NOW() ORDER BY s.created_at DESC`, []);
+    const stories = rows.map(r => ({
+      id: String(r.id),
+      userId: String(r.user_id),
+      userName: r.userName || 'Usuário',
+      userPhoto: r.userPhoto || '',
+      imageUrl: r.media_url,
+      mediaType: r.media_type || 'photo',
+      caption: r.caption,
+      createdAt: r.created_at,
+      viewed: false
+    }));
+    res.json({ stories });
+  } catch (err) { console.error('Erro GET stories:', err); res.status(500).json({ error: 'Erro interno' }); }
 });
 
 app.post('/api/stories/:id/view', async (req, res) => {
@@ -958,13 +986,15 @@ app.put('/api/users/:id/photos/:photoId/main', async (req, res) => {
 app.get('/api/reels', async (req, res) => {
   try {
     const { category } = req.query;
-    let sql = 'SELECT r.*, u.name as userName FROM reels r LEFT JOIN users u ON r.user_id = u.id';
+    let sql = `SELECT r.*, u.name as userName, u.church_name as churchName,
+      (SELECT p.url FROM photos p WHERE p.user_id = r.user_id AND p.is_profile = 1 LIMIT 1) as userPhoto
+      FROM reels r LEFT JOIN users u ON r.user_id = u.id`;
     const params = [];
     if (category && category !== 'all') { sql += ' WHERE r.category = ?'; params.push(category); }
     sql += ' ORDER BY r.created_at DESC LIMIT 50';
     const rows = await query(sql, params);
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+  } catch (err) { console.error('Erro GET reels:', err); res.status(500).json({ error: 'Erro interno' }); }
 });
 
 app.post('/api/reels', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
