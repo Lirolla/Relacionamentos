@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "mkdir -p dist && cp server.js dist/index.js && echo Build done",
+    "build": "cp index.html.dev index.html && vite build && cp server.js dist/index.js && cp dist/index.html index.html",
     "build:local": "cp index.html.dev index.html && vite build && cp server.js dist/index.js && cp dist/index.html index.html",
     "preview": "vite preview",
     "start": "node server.js"
