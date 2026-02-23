@@ -932,7 +932,7 @@ app.post('/api/users/:id/photos', upload.single('photo'), async (req, res) => {
     const isPrimary = existing[0].c === 0 ? 1 : 0;
     const result = await query('INSERT INTO photos (user_id, url, is_primary, sort_order) VALUES (?,?,?,?)', [req.params.id, url, isPrimary, existing[0].c]);
     res.status(201).json({ id: result.insertId, url, is_primary: isPrimary });
-  } catch (err) { console.error('Erro upload foto:', err); res.status(500).json({ error: 'Erro ao enviar foto' }); }
+  } catch (err) { console.error('Erro upload foto:', err.message, err.stack); res.status(500).json({ error: 'Erro ao enviar foto', detail: err.message }); }
 });
 
 app.delete('/api/users/:id/photos/:photoId', async (req, res) => {
