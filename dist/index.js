@@ -1260,6 +1260,24 @@ app.get('/api/debug/tables', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.get('/api/debug/columns/:table', async (req, res) => {
+  try {
+    const cols = await query('SHOW COLUMNS FROM ??', [req.params.table]);
+    res.json({ columns: cols });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/debug/test-r2', async (req, res) => {
+  try {
+    const testBuffer = Buffer.from('test upload ' + Date.now());
+    const key = 'test/debug-test.txt';
+    const cmd = new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, Body: testBuffer, ContentType: 'text/plain' });
+    await s3.send(cmd);
+    const url = `${R2_PUBLIC_URL}/${key}`;
+    res.json({ success: true, url });
+  } catch (err) { res.status(500).json({ error: err.message, stack: err.stack }); }
+});
+
 app.get('/api/debug/setup', async (req, res) => {
   const results = [];
   try {

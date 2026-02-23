@@ -160,33 +160,23 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-6xl font-black text-gray-900 mb-6">Planos</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Comece grátis e faça upgrade quando quiser para desbloquear recursos premium.</p>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Experimente grátis por 7 dias e descubra seu par perfeito na fé.</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
-            <div className="bg-white p-10 rounded-3xl border-3 border-gray-300 shadow-lg hover:shadow-2xl transition-all">
-              <h3 className="text-2xl font-black text-gray-900 mb-3">Gratuito</h3>
-              <p className="text-5xl font-black text-gray-900 mb-8">R$ 0<span className="text-xl font-normal text-gray-600">/mês</span></p>
-              <ul className="space-y-4 mb-10">
-                {['5 likes por dia', 'Ver perfis próximos', 'Chat com matches', 'Filtros básicos', 'Devocional do casal', 'Feed da comunidade'].map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-700 text-lg"><Check size={20} className="text-green-600" /> {f}</li>
-                ))}
-              </ul>
-              <button onClick={handleStart} className="w-full py-4 bg-gray-200 text-gray-900 font-black rounded-2xl hover:bg-gray-300 transition-all text-lg">
-                Começar Grátis
-              </button>
-            </div>
+          <div className="max-w-lg mx-auto">
             <div className="bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all relative overflow-hidden">
-              <div className="absolute top-4 right-4 bg-white text-amber-600 px-4 py-2 rounded-full text-xs font-black">MAIS POPULAR</div>
-              <h3 className="text-2xl font-black text-white mb-3">Premium</h3>
-              <p className="text-5xl font-black text-white mb-8">R$ 29,90<span className="text-xl font-normal text-white/80">/mês</span></p>
+              <div className="absolute top-4 right-4 bg-white text-amber-600 px-4 py-2 rounded-full text-xs font-black">7 DIAS GRÁTIS</div>
+              <h3 className="text-2xl font-black text-white mb-2">Premium</h3>
+              <p className="text-5xl font-black text-white mb-2">R$ 29,90<span className="text-xl font-normal text-white/80">/mês</span></p>
+              <p className="text-white/90 text-sm mb-8">Após o período de teste gratuito de 7 dias</p>
               <ul className="space-y-4 mb-10">
-                {['Likes ilimitados', 'Filtros avançados', 'Ver quem curtiu você', 'Destaque no perfil', 'Sem anúncios', 'Reels exclusivos', 'Verificação prioritária', 'Suporte VIP'].map((f, i) => (
+                {['Likes ilimitados', 'Filtros avançados', 'Ver quem curtiu você', 'Destaque no perfil', 'Sem anúncios', 'Reels exclusivos', 'Chat com matches', 'Ver perfis próximos', 'Devocional do casal', 'Feed da comunidade', 'Verificação prioritária', 'Suporte VIP'].map((f, i) => (
                   <li key={i} className="flex items-center gap-3 text-white text-lg"><Check size={20} className="text-white" /> {f}</li>
                 ))}
               </ul>
               <button onClick={handleStart} className="w-full py-4 bg-white text-amber-600 font-black rounded-2xl hover:scale-105 transition-all text-lg shadow-xl">
-                Seja Premium Agora
+                Começar 7 Dias Grátis
               </button>
+              <p className="text-white/70 text-xs text-center mt-4">Cancele a qualquer momento durante o período de teste</p>
             </div>
           </div>
         </div>

@@ -1043,7 +1043,7 @@ const App: React.FC = () => {
                 {/* Botão Premium - esconder para admin */}
                 {!isAdmin && (
                 <button onClick={() => setShowPremiumModal(true)} className="w-full mt-4 flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl shadow-xl shadow-amber-200 active:scale-95 transition-all">
-                  <Crown size={20}/> Seja Premium - R$ 29,90/mês
+                  <Crown size={20}/> Comece 7 Dias Grátis - Depois R$ 29,90/mês
                 </button>
                 )}
 
@@ -1305,12 +1305,13 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
-            <div className="text-center mb-6">
+            <div className="text-center mb-2">
               <span className="text-4xl font-black text-slate-800">R$ 29,90</span>
               <span className="text-slate-400">/mês</span>
             </div>
+            <p className="text-center text-amber-600 text-sm font-medium mb-6">Após 7 dias de teste gratuito</p>
             <button onClick={() => window.location.href = '/premium'} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all">
-              Assinar Agora
+              Começar 7 Dias Grátis
             </button>
             <button onClick={() => setShowPremiumModal(false)} className="w-full py-4 text-slate-400 font-bold mt-2">Depois</button>
           </div>
