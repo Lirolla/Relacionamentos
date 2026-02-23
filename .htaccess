@@ -3,3 +3,13 @@ PassengerAppType node
 PassengerNodejs /opt/alt/alt-nodejs22/root/bin/node
 PassengerStartupFile server.js
 PassengerBaseURI /
+
+# Forçar todas as requisições a passarem pelo Node.js (Express)
+PassengerEnabled on
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ / [L,PT]
+
+# Impedir Apache de servir index.html da raiz diretamente
+DirectoryIndex disabled
