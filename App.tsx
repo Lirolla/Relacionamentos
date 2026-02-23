@@ -394,6 +394,9 @@ const App: React.FC = () => {
   // Stories
   const [stories, setStories] = useState<any[]>([]);
 
+  // Modal de verificação requerida
+  const [showVerificationRequired, setShowVerificationRequired] = useState(false);
+
   // Events
   const [showEvents, setShowEvents] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
@@ -462,6 +465,7 @@ const App: React.FC = () => {
   const trialDaysLeft = getTrialDaysLeft();
   const isTrialExpired = trialDaysLeft <= 0 && !isPaid && !isAdmin;
   const isVerified = verificationStatus === 'verified' || localStorage.getItem('identity_verified') === 'true' || isAdmin;
+  const canInteract = isVerified;
 
   // Função para mapear user do banco para Profile do frontend
   const mapUserToProfile = (user: any): Profile & { role: UserRole } => {
@@ -760,83 +764,7 @@ const App: React.FC = () => {
     setScreen('app');
   }} onBack={() => setScreen('welcome')} />;
 
-  // ===================== TELA DE VERIFICAÇÃO OBRIGATÓRIA =====================
-  if (!isVerified && screen === 'app') return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md text-center">
-        <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/30">
-          <ShieldCheck size={48} className="text-white" />
-        </div>
-        <h1 className="text-3xl font-serif font-bold text-white mb-4">Verifique sua Identidade</h1>
-        <p className="text-slate-400 text-lg mb-3">Para sua segurança, tire uma selfie para confirmar que você é uma pessoa real.</p>
-        <p className="text-slate-500 text-sm mb-10">Nossa equipe analisa em background. Você já pode usar o app normalmente após enviar.</p>
-        
-        {verificationStatus === 'none' && (
-          <button onClick={() => setShowVerification(true)} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-500/30 active:scale-95 transition-all">
-            <ShieldCheck size={22} className="inline mr-3" />Tirar Selfie de Verificação
-          </button>
-        )}
-        {verificationStatus === 'pending' && (
-          <div className="w-full py-5 bg-green-500/20 text-green-400 font-bold text-lg rounded-2xl border border-green-500/30">
-            <ShieldCheck size={22} className="inline mr-3" />Foto enviada com sucesso!
-            <p className="text-green-500/70 text-sm font-normal mt-2">Sua verificação está em análise. Você já pode usar o app!</p>
-          </div>
-        )}
-        {verificationStatus === 'rejected' && (
-          <div>
-            <div className="w-full py-4 bg-red-500/20 text-red-400 font-bold rounded-2xl border border-red-500/30 mb-4">
-              Verificação recusada. Tente novamente.
-            </div>
-            <button onClick={() => { setVerificationStatus('none'); setShowVerification(true); }} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl active:scale-95 transition-all">
-              Tentar Novamente
-            </button>
-          </div>
-        )}
-
-        {/* Botão para entrar no app - aparece quando pending (foto já enviada) */}
-        {verificationStatus === 'pending' && (
-          <button onClick={() => {
-            localStorage.setItem('identity_verified', 'true');
-            setVerificationStatus('verified');
-            if (!localStorage.getItem('trial_start')) {
-              localStorage.setItem('trial_start', new Date().toISOString());
-            }
-          }} className="w-full mt-4 py-5 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-green-500/30 active:scale-95 transition-all">
-            Entrar no App
-          </button>
-        )}
-
-        <button onClick={() => setScreen('welcome')} className="mt-6 text-slate-500 hover:text-slate-400 transition-colors text-sm">
-          <ArrowLeft size={16} className="inline mr-2" />Voltar
-        </button>
-      </div>
-
-      {showVerification && (
-        <IdentityVerification 
-          onClose={() => setShowVerification(false)} 
-          onSubmit={async (file) => { 
-            setVerificationStatus('pending'); 
-            setShowVerification(false);
-            // Enviar foto para o R2 via API
-            try {
-              const formData = new FormData();
-              formData.append('photo', file);
-              formData.append('userId', state.currentUser.id);
-              formData.append('type', 'selfie');
-              await fetch('/api/verification/submit', { method: 'POST', body: formData });
-            } catch (err) {
-              console.error('Erro ao enviar verificação:', err);
-            }
-            // Iniciar trial
-            if (!localStorage.getItem('trial_start')) {
-              localStorage.setItem('trial_start', new Date().toISOString());
-            }
-          }} 
-          status={verificationStatus}
-        />
-      )}
-    </div>
-  );
+  // Verificação não bloqueia mais o app - usuário pode navegar mas não interagir
 
   // ===================== TELA DE PAYWALL (TRIAL EXPIRADO) =====================
   if (isTrialExpired && screen === 'app') return (
@@ -906,7 +834,7 @@ const App: React.FC = () => {
           <button onClick={() => setShowAdvancedFilters(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             <SlidersHorizontal size={20} />
           </button>
-          <button onClick={() => setShowReels(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
+          <button onClick={() => canInteract ? setShowReels(true) : setShowVerificationRequired(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
             <Film size={20} />
           </button>
           <button onClick={() => setShowSettingsPage(true)} className={`p-2 rounded-xl transition-all border ${darkMode ? 'bg-slate-700 text-slate-300 border-slate-600 hover:text-amber-400' : 'bg-slate-50 text-slate-500 border-slate-100 hover:text-amber-600'}`}>
@@ -914,6 +842,19 @@ const App: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Banner Verificação Pendente */}
+      {!canInteract && screen === 'app' && (
+        <div className="px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck size={16} />
+            <span className="font-bold">Verifique seu perfil para desbloquear todas as funções</span>
+          </div>
+          <button onClick={() => setShowVerification(true)} className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold hover:bg-white/30 transition-all">
+            Verificar
+          </button>
+        </div>
+      )}
 
       {/* Banner Trial */}
       {!isPaid && !isAdmin && trialDaysLeft > 0 && trialDaysLeft <= 7 && isVerified && (
@@ -933,13 +874,13 @@ const App: React.FC = () => {
         {activeTab === 'swipe' && (
           <div className="h-full flex flex-col items-center p-4">
             {/* Stories */}
-            <Stories stories={stories} currentUserId={state.currentUser.id} onPostStory={() => setShowStoriesCamera(true)} onViewStory={(id) => console.log('view story', id)} />
+            <Stories stories={stories} currentUserId={state.currentUser.id} onPostStory={() => canInteract ? setShowStoriesCamera(true) : setShowVerificationRequired(true)} onViewStory={(id) => console.log('view story', id)} />
 
             {currentProfile ? (
               <div className="relative w-full max-w-sm">
-                <SwipeCard profile={currentProfile} onSwipeRight={handleSwipeRight} onSwipeLeft={(id) => setState(p => ({ ...p, swipedLeft: [...p.swipedLeft, id] }))} />
+                <SwipeCard profile={currentProfile} onSwipeRight={(id) => canInteract ? handleSwipeRight(id) : setShowVerificationRequired(true)} onSwipeLeft={(id) => canInteract ? setState(p => ({ ...p, swipedLeft: [...p.swipedLeft, id] })) : setShowVerificationRequired(true)} />
                 <button 
-                  onClick={() => setState(prev => ({ ...prev, favorites: prev.favorites.includes(currentProfile.id) ? prev.favorites.filter(id => id !== currentProfile.id) : [...prev.favorites, currentProfile.id] }))}
+                  onClick={() => canInteract ? setState(prev => ({ ...prev, favorites: prev.favorites.includes(currentProfile.id) ? prev.favorites.filter(id => id !== currentProfile.id) : [...prev.favorites, currentProfile.id] })) : setShowVerificationRequired(true)}
                   className={`absolute top-4 right-4 p-4 rounded-full backdrop-blur-xl transition-all shadow-2xl z-10 ${state.favorites.includes(currentProfile.id) ? 'bg-amber-500 text-white' : 'bg-white/30 text-white border border-white/40'}`}
                 >
                   <Star size={24} fill={state.favorites.includes(currentProfile.id) ? 'currentColor' : 'none'} />
@@ -953,7 +894,7 @@ const App: React.FC = () => {
                 </button>
                 {/* Botão Compartilhar Perfil */}
                 <button 
-                  onClick={() => { setShareTarget({name: currentProfile.name, photo: currentProfile.photoUrl, age: currentProfile.age, church: currentProfile.churchName || 'Igreja Cristã'}); setShowShareProfile(true); }}
+                  onClick={() => canInteract ? (() => { setShareTarget({name: currentProfile.name, photo: currentProfile.photoUrl, age: currentProfile.age, church: currentProfile.churchName || 'Igreja Cristã'}); setShowShareProfile(true); })() : setShowVerificationRequired(true)}
                   className="absolute top-16 left-4 p-3 rounded-full bg-white/20 backdrop-blur-xl text-white/70 hover:text-blue-400 transition-all z-10 border border-white/20"
                 >
                   <Share2 size={18} />
@@ -1037,7 +978,7 @@ const App: React.FC = () => {
                 {state.matches.map(m => {
                   const other = state.profiles.find(p => m.users.includes(p.id));
                   return (
-                    <button key={m.id} onClick={() => setActiveChat(m)} className="w-full flex items-center gap-5 p-5 bg-white rounded-[32px] shadow-sm border border-slate-100 hover:shadow-md transition-all active:scale-95 text-left">
+                    <button key={m.id} onClick={() => canInteract ? setActiveChat(m) : setShowVerificationRequired(true)} className="w-full flex items-center gap-5 p-5 bg-white rounded-[32px] shadow-sm border border-slate-100 hover:shadow-md transition-all active:scale-95 text-left">
                       <div className="relative">
                         <img src={other?.imageUrl} className="w-16 h-16 rounded-3xl object-cover border-2 border-white shadow-lg" />
                         <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-4 border-white rounded-full" />
@@ -1141,7 +1082,7 @@ const App: React.FC = () => {
                           placeholder="Digite sua mensagem..." 
                           className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-amber-500" 
                         />
-                        <button onClick={handleSendMessage} className="p-4 bg-amber-500 text-white rounded-2xl shadow-lg active:scale-90 transition-all">
+                        <button onClick={() => canInteract ? handleSendMessage() : setShowVerificationRequired(true)} className="p-4 bg-amber-500 text-white rounded-2xl shadow-lg active:scale-90 transition-all">
                           <Send size={20}/>
                         </button>
                       </div>
@@ -1544,7 +1485,24 @@ const App: React.FC = () => {
       {showVerification && (
         <IdentityVerification 
           onClose={() => setShowVerification(false)} 
-          onSubmit={(file) => { setVerificationStatus('pending'); setShowVerification(false); }} 
+          onSubmit={async (file) => { 
+            setVerificationStatus('pending'); 
+            setShowVerification(false);
+            // Enviar foto para o R2 via API
+            try {
+              const formData = new FormData();
+              formData.append('photo', file);
+              formData.append('userId', state.currentUser.id);
+              formData.append('type', 'selfie');
+              await fetch('/api/verification/submit', { method: 'POST', body: formData });
+            } catch (err) {
+              console.error('Erro ao enviar verifica\u00e7\u00e3o:', err);
+            }
+            // Iniciar trial
+            if (!localStorage.getItem('trial_start')) {
+              localStorage.setItem('trial_start', new Date().toISOString());
+            }
+          }} 
           status={verificationStatus}
         />
       )}
@@ -1723,9 +1681,9 @@ const App: React.FC = () => {
         <ProfileDetail
           profile={profileDetailTarget}
           onClose={() => { setShowProfileDetail(false); setProfileDetailTarget(null); }}
-          onLike={(id) => { handleSwipeRight(id); setShowProfileDetail(false); setProfileDetailTarget(null); }}
-          onSuperLike={(id) => { handleSwipeRight(id); setShowProfileDetail(false); setProfileDetailTarget(null); }}
-          onMessage={(id) => { setActiveTab('chat'); setShowProfileDetail(false); setProfileDetailTarget(null); }}
+          onLike={(id) => { if (!canInteract) { setShowVerificationRequired(true); return; } handleSwipeRight(id); setShowProfileDetail(false); setProfileDetailTarget(null); }}
+          onSuperLike={(id) => { if (!canInteract) { setShowVerificationRequired(true); return; } handleSwipeRight(id); setShowProfileDetail(false); setProfileDetailTarget(null); }}
+          onMessage={(id) => { if (!canInteract) { setShowVerificationRequired(true); return; } setActiveTab('chat'); setShowProfileDetail(false); setProfileDetailTarget(null); }}
           isFavorite={state.favorites.includes(profileDetailTarget.id)}
           onToggleFavorite={(id) => setState(prev => ({ ...prev, favorites: prev.favorites.includes(id) ? prev.favorites.filter(fid => fid !== id) : [...prev.favorites, id] }))}
         />
@@ -1740,6 +1698,27 @@ const App: React.FC = () => {
           invitesSent={12}
           invitesAccepted={8}
         />
+      )}
+
+      {/* ===================== MODAL VERIFICAÇÃO REQUERIDA ===================== */}
+      {showVerificationRequired && (
+        <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl animate-scale-up">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <ShieldCheck size={40} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-slate-800 mb-3">Verificação Necessária</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-2">Para usar esta função, você precisa verificar seu perfil com uma selfie.</p>
+              <p className="text-slate-400 text-xs mb-8">Isso garante a segurança de todos na comunidade.</p>
+              
+              <button onClick={() => { setShowVerificationRequired(false); setShowVerification(true); }} className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-3">
+                <ShieldCheck size={22} /> Verificar Agora
+              </button>
+              <button onClick={() => setShowVerificationRequired(false)} className="w-full py-4 text-slate-400 font-bold mt-2">Depois</button>
+            </div>
+          </div>
+        </div>
       )}
 
       <style>{`
